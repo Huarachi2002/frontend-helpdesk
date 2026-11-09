@@ -1,7 +1,10 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <HelloWorld />
+  <Toast position="top-right" />
+  <ConfirmDialog />
+  <RouterView />
 </template>
+
+<script setup>
+import Toast from 'primevue/toast'
+import ConfirmDialog from 'primevue/confirmdialog'
+</script>
