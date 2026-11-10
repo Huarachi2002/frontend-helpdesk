@@ -230,6 +230,7 @@ import {
   IconFileTypePdf,
 } from '@tabler/icons-vue'
 import { getVolumeReport, getImpactReport, getTimesReport, exportReport } from '../../api/reports.js'
+import { chartColors } from '../../styles/theme.js'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend)
 
@@ -261,30 +262,29 @@ onMounted(async () => {
   }
 })
 
-// Gráfico Volumen por período
+// Gráfico Volumen por período (referencia a la paleta centralizada)
 const volumeChartData = computed(() => ({
   labels: (volume.value.by_period ?? []).map(p => p.month),
   datasets: [{
     label: 'Tickets',
     data: (volume.value.by_period ?? []).map(p => p.count),
-    backgroundColor: '#0284c7',
-    hoverBackgroundColor: '#0369a1',
+    backgroundColor: chartColors.blue,
+    hoverBackgroundColor: chartColors.palette[0],
     borderRadius: 8,
   }],
 }))
 
-// Gráfico por categoría
-const palette = ['#0284c7', '#6366f1', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6']
+// Gráfico por categoría (referencia a la paleta centralizada)
 const categoryChartData = computed(() => ({
   labels: (volume.value.by_category ?? []).map(c => c.name),
   datasets: [{
     data: (volume.value.by_category ?? []).map(c => c.count),
-    backgroundColor: palette,
+    backgroundColor: chartColors.palette,
     borderWidth: 0,
   }],
 }))
 
-// Gráfico Bot vs Humano
+// Gráfico Bot vs Humano (referencia a la paleta centralizada)
 const impactChartData = computed(() => ({
   labels: ['Resueltos por Bot', 'Escalados a Humano'],
   datasets: [{
@@ -293,7 +293,7 @@ const impactChartData = computed(() => ({
       impact.value.bot_autonomous_resolution_rate_percent ?? 0,
       impact.value.escalation_to_human_rate_percent ?? 0,
     ],
-    backgroundColor: ['#10b981', '#f59e0b'],
+    backgroundColor: [chartColors.emerald, chartColors.amber],
     borderRadius: 8,
   }],
 }))
@@ -388,14 +388,14 @@ async function doExport(format) {
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   letter-spacing: -0.5px;
   margin: 0;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -407,8 +407,8 @@ async function doExport(format) {
 }
 
 .kpi-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
   border-radius: 14px;
   padding: 18px 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -424,7 +424,7 @@ async function doExport(format) {
 .kpi-label {
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -438,23 +438,23 @@ async function doExport(format) {
   justify-content: center;
 }
 
-.bg-blue { background: #e0f2fe; color: #0284c7; }
-.bg-amber { background: #fef3c7; color: #d97706; }
-.bg-emerald { background: #d1fae5; color: #059669; }
-.bg-purple { background: #ede9fe; color: #7c3aed; }
-.bg-rose { background: #ffe4e6; color: #e11d48; }
+.bg-blue    { background: var(--kpi-tickets-bg);  color: var(--kpi-tickets-icon); }
+.bg-amber   { background: var(--kpi-frt-bg);      color: var(--kpi-frt-icon); }
+.bg-emerald { background: var(--kpi-mttr-bg);     color: var(--kpi-mttr-icon); }
+.bg-purple  { background: var(--kpi-bot-bg);      color: var(--kpi-bot-icon); }
+.bg-rose    { background: var(--kpi-escalate-bg); color: var(--kpi-escalate-icon); }
 
 .kpi-value {
   font-size: 26px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   line-height: 1.1;
   letter-spacing: -0.5px;
 }
 
 .kpi-note {
   font-size: 11.5px;
-  color: #94a3b8;
+  color: var(--text-subtle);
   margin-top: 4px;
 }
 
@@ -475,8 +475,8 @@ async function doExport(format) {
 }
 
 .chart-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
   border-radius: 14px;
   padding: 22px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -500,7 +500,7 @@ async function doExport(format) {
 .chart-title {
   font-size: 15px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -515,14 +515,14 @@ async function doExport(format) {
   justify-content: center;
 }
 
-.text-blue { color: #0284c7; }
-.text-purple { color: #7c3aed; }
-.text-emerald { color: #059669; }
+.text-blue    { color: var(--color-primary-600); }
+.text-purple  { color: var(--color-purple-600); }
+.text-emerald { color: var(--color-success-600); }
 
 /* Export Panel */
 .export-panel {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
   border-radius: 14px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -541,13 +541,13 @@ async function doExport(format) {
 .export-title {
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
 }
 
 .export-subtitle {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -575,7 +575,7 @@ async function doExport(format) {
 .date-label {
   font-size: 12.5px;
   font-weight: 600;
-  color: #475569;
+  color: var(--color-slate-600);
 }
 
 .date-input-wrap {
@@ -587,24 +587,24 @@ async function doExport(format) {
 .calendar-icon {
   position: absolute;
   left: 10px;
-  color: #94a3b8;
+  color: var(--text-subtle);
   pointer-events: none;
 }
 
 .date-input {
   padding: 8px 12px 8px 34px;
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
+  background: var(--surface-input);
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   font-size: 13.5px;
-  color: #1e293b;
+  color: var(--text-main);
   outline: none;
   transition: border-color 0.15s;
 }
 
 .date-input:focus {
-  border-color: #0284c7;
-  background: #ffffff;
+  border-color: var(--border-focus);
+  background: var(--surface-input-focus);
 }
 
 .export-buttons-group {

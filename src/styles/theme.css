@@ -1,0 +1,180 @@
+/**
+ * ==============================================================================
+ * HELPDESK CAMPUS - DESIGN SYSTEM & COLOR PALETTE
+ * ==============================================================================
+ * Archivo centralizado de tokens de color y estilos para la plataforma Helpdesk.
+ * Diseñado para ser reutilizable, modular y fácilmente compartible con otros
+ * desarrolladores o interfaces satélite del campus.
+ * ==============================================================================
+ */
+
+:root {
+  /* ----------------------------------------------------------------------------
+   * 1. PALETA PRIMITIVA (Escalas de Color Base)
+   * ---------------------------------------------------------------------------- */
+
+  /* Azul Corporativo / Brand */
+  --color-primary-50:  #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+
+  /* Neutros Slate (Superficies, Fondos y Contornos) */
+  --color-slate-50:  #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #090e17;
+
+  /* Éxito / Esmeralda (Resuelto, En línea, Activo) */
+  --color-success-50:  #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-success-800: #065f46;
+
+  /* Alerta / Ámbar (En Proceso, Tiempos, Advertencias) */
+  --color-warning-50:  #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+
+  /* Peligro / Rojo (Crítico, Alta prioridad, Cancelar, Salir) */
+  --color-danger-50:  #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+
+  /* Asistente IA / Púrpura (Bot, NLP, Intenciones) */
+  --color-purple-50:  #faf5ff;
+  --color-purple-100: #ede9fe;
+  --color-purple-200: #e9d5ff;
+  --color-purple-300: #d8b4fe;
+  --color-purple-400: #c084fc;
+  --color-purple-500: #a855f7;
+  --color-purple-600: #7c3aed;
+  --color-purple-700: #6d28d9;
+
+  /* ----------------------------------------------------------------------------
+   * 2. TOKENS SEMÁNTICOS (Uso General en Vistas)
+   * ---------------------------------------------------------------------------- */
+
+  /* Fondos y Superficies */
+  --surface-app:          var(--color-slate-50);
+  --surface-card:         #ffffff;
+  --surface-card-hover:   var(--color-slate-50);
+  --surface-muted:        var(--color-slate-100);
+  --surface-input:        var(--color-slate-50);
+  --surface-input-focus:  #ffffff;
+
+  /* Tipografía y Textos */
+  --text-main:            var(--color-slate-900);
+  --text-body:            var(--color-slate-700);
+  --text-muted:           var(--color-slate-500);
+  --text-subtle:          var(--color-slate-400);
+  --text-inverse:         #ffffff;
+  --text-brand:           var(--color-primary-600);
+
+  /* Bordes y Líneas Divisorias */
+  --border-subtle:        var(--color-slate-100);
+  --border-default:       var(--color-slate-200);
+  --border-strong:        var(--color-slate-300);
+  --border-focus:         var(--color-primary-600);
+  --focus-ring:           rgba(2, 132, 199, 0.15);
+
+  /* ----------------------------------------------------------------------------
+   * 3. TOKENS DE LAYOUT (Estructura de Navegación)
+   * ---------------------------------------------------------------------------- */
+  --sidebar-bg:                  var(--color-slate-900);
+  --sidebar-border:              var(--color-slate-800);
+  --sidebar-link-text:           var(--color-slate-400);
+  --sidebar-link-hover-bg:       rgba(255, 255, 255, 0.05);
+  --sidebar-link-hover-text:     #f8fafc;
+  --sidebar-link-active-bg:      linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(14, 165, 233, 0.05));
+  --sidebar-link-active-text:    var(--color-primary-400);
+  --sidebar-link-active-bar:     var(--color-primary-400);
+  --sidebar-footer-bg:           var(--color-slate-950);
+  --topbar-bg:                   #ffffff;
+  --topbar-border:               var(--color-slate-200);
+
+  /* ----------------------------------------------------------------------------
+   * 4. COMPONENTES Y VISTAS ESPECÍFICAS
+   * ---------------------------------------------------------------------------- */
+
+  /* Estados de Tickets */
+  --status-open-bg:          var(--color-primary-100);
+  --status-open-text:        var(--color-primary-700);
+  --status-in_progress-bg:   var(--color-warning-100);
+  --status-in_progress-text: var(--color-warning-700);
+  --status-waiting-bg:       var(--color-purple-100);
+  --status-waiting-text:     var(--color-purple-700);
+  --status-resolved-bg:      var(--color-success-100);
+  --status-resolved-text:    var(--color-success-800);
+  --status-closed-bg:        var(--color-slate-200);
+  --status-closed-text:      var(--color-slate-600);
+
+  /* Prioridades de Incidencia */
+  --priority-low-bg:         var(--color-success-100);
+  --priority-low-text:       var(--color-success-800);
+  --priority-medium-bg:      var(--color-warning-100);
+  --priority-medium-text:    var(--color-warning-800);
+  --priority-high-bg:        var(--color-danger-100);
+  --priority-high-text:      var(--color-danger-700);
+  --priority-critical-bg:    var(--color-danger-800);
+  --priority-critical-text:  #ffffff;
+
+  /* Tarjetas KPI y Métricas */
+  --kpi-tickets-bg:          var(--color-primary-100);
+  --kpi-tickets-icon:        var(--color-primary-600);
+  --kpi-frt-bg:              var(--color-warning-100);
+  --kpi-frt-icon:            var(--color-warning-600);
+  --kpi-mttr-bg:             var(--color-success-100);
+  --kpi-mttr-icon:           var(--color-success-600);
+  --kpi-bot-bg:              var(--color-purple-100);
+  --kpi-bot-icon:            var(--color-purple-600);
+  --kpi-escalate-bg:         var(--color-danger-100);
+  --kpi-escalate-icon:       var(--color-danger-600);
+
+  /* Burbujas del Modal del Bot (Historial) */
+  --bubble-user-bg:          var(--color-primary-50);
+  --bubble-user-border:      var(--color-primary-200);
+  --bubble-user-badge:       var(--color-primary-600);
+  --bubble-bot-bg:           var(--color-purple-50);
+  --bubble-bot-border:       var(--color-purple-200);
+  --bubble-bot-badge:        var(--color-purple-600);
+
+  /* Gráficos de Datos (Chart.js / Estadísticas) */
+  --chart-primary:   #0284c7;
+  --chart-secondary: #6366f1;
+  --chart-warning:   #f59e0b;
+  --chart-success:   #10b981;
+  --chart-accent:    #ec4899;
+  --chart-purple:    #8b5cf6;
+}
+

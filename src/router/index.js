@@ -9,6 +9,7 @@ const TicketListView  = () => import('../views/helpdesk/TicketListView.vue')
 const TicketDetailView = () => import('../views/helpdesk/TicketDetailView.vue')
 const BotHistoryView  = () => import('../views/admin/BotHistoryView.vue')
 const ReportView      = () => import('../views/reports/ReportView.vue')
+const UsersManagementView = () => import('../views/admin/UsersManagementView.vue')
 
 const routes = [
   {
@@ -28,6 +29,12 @@ const routes = [
       { path: 'tickets/:id',  name: 'ticket-detail', component: TicketDetailView, props: true },
       { path: 'bot-history',  name: 'bot-history',   component: BotHistoryView },
       { path: 'reports',      name: 'reports',       component: ReportView },
+      {
+        path: 'users',
+        name: 'users-management',
+        component: UsersManagementView,
+        meta: { requiresAdmin: true },
+      },
     ],
   },
   // Captura de rutas desconocidas
@@ -58,6 +65,10 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   if (to.meta.guest && auth.isAuthenticated) {
+    return next({ name: 'dashboard' })
+  }
+
+  if (to.meta.requiresAdmin && auth.user?.role !== 'admin') {
     return next({ name: 'dashboard' })
   }
 
