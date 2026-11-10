@@ -30,7 +30,7 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-#app {
+#app, #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
