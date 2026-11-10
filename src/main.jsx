@@ -1,3 +1,5 @@
+// Debe ser la primera importación para asegurar React en scope global (PrimeReact utils)
+import './react-shim.js'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
@@ -22,4 +24,3 @@ ReactDOM.createRoot(rootElement).render(
     </BrowserRouter>
   </React.StrictMode>
 )
-
