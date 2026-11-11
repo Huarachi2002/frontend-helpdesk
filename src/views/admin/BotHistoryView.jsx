@@ -355,6 +355,7 @@ export default function BotHistoryView() {
           <Button
             label="Cerrar"
             severity="secondary"
+            size="small"
             onClick={() => setDetailVisible(false)}
           />
         }

@@ -36,7 +36,7 @@
   color: var(--text-body);
   font-size: 12px;
   font-weight: 600;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 12px;
 }
 
@@ -196,7 +196,7 @@
 .tickets-view .id-tag {
   background: var(--surface-muted);
   color: var(--text-main);
-  padding: 3px 6px;
+  padding: 4px 8px;
   border-radius: 6px;
   font-size: 12px;
 }
@@ -233,7 +233,7 @@
 .tickets-view .category-pill {
   background: var(--surface-muted);
   color: var(--color-slate-600);
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 6px;
   font-weight: 500;
 }

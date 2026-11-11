@@ -12,10 +12,19 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
 }
 
+/* Reset base selectivo que NO destruye el padding de componentes de librería */
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd {
+  margin: 0;
+}
+
+ul, ol {
   margin: 0;
   padding: 0;
+  list-style: none;
 }
 
 html, body {
@@ -73,14 +82,155 @@ button, input, select, textarea {
   opacity: 0;
 }
 
-/* PrimeReact Tag Theme Enhancements */
+/* ==============================================================================
+ * AJUSTES GLOBALES DE COMPONENTES PRIMEREACT (PADDING & BORDER-RADIUS)
+ * ============================================================================== */
+
+/* Botones PrimeReact (.p-button) */
+.p-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 9px 18px !important;
+  border-radius: 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.p-button.p-button-sm {
+  padding: 7px 14px !important;
+  font-size: 12.5px !important;
+  gap: 6px !important;
+  border-radius: 8px !important;
+}
+
+.p-button.p-button-icon-only {
+  width: 38px !important;
+  height: 38px !important;
+  padding: 0 !important;
+}
+
+.p-button.p-button-icon-only.p-button-sm {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border-radius: 7px !important;
+}
+
+/* Botones secundarios y outlined (como "Actualizar", "Ver", etc.) */
+.p-button.p-button-secondary.p-button-outlined {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border-strong) !important;
+  color: var(--color-slate-700) !important;
+}
+
+.p-button.p-button-secondary.p-button-outlined:hover {
+  background: var(--surface-muted) !important;
+  border-color: var(--color-slate-400) !important;
+  color: var(--text-main) !important;
+}
+
+/* Etiquetas / Tags / Pills (.p-tag) */
+.p-tag {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding: 5px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  border-radius: 6px !important;
+  border: 1px solid transparent !important;
+  white-space: nowrap !important;
+}
+
+.p-tag.p-tag-rounded {
+  border-radius: 20px !important;
+  padding: 4px 11px !important;
+}
+
+/* Variantes de Tags sincronizadas con el tema del campus */
+.p-tag.p-tag-success {
+  background-color: var(--color-success-50) !important;
+  color: var(--color-success-700) !important;
+  border-color: var(--color-success-200) !important;
+}
+
+.p-tag.p-tag-info {
+  background-color: var(--color-primary-50) !important;
+  color: var(--color-primary-700) !important;
+  border-color: var(--color-primary-200) !important;
+}
+
+.p-tag.p-tag-warning {
+  background-color: var(--color-warning-50) !important;
+  color: var(--color-warning-700) !important;
+  border-color: var(--color-warning-200) !important;
+}
+
+.p-tag.p-tag-danger {
+  background-color: var(--color-danger-50) !important;
+  color: var(--color-danger-700) !important;
+  border-color: var(--color-danger-200) !important;
+}
+
 .p-tag.p-tag-secondary {
-  background-color: var(--status-closed-bg);
-  color: var(--status-closed-text);
+  background-color: var(--surface-muted) !important;
+  color: var(--color-slate-600) !important;
+  border-color: var(--border-default) !important;
 }
 
 .p-tag.p-tag-contrast {
-  background-color: var(--status-waiting-bg);
-  color: var(--status-waiting-text);
-  border: 1px solid var(--color-purple-200);
+  background-color: var(--color-purple-50) !important;
+  color: var(--color-purple-700) !important;
+  border-color: var(--color-purple-200) !important;
+}
+
+/* Modales PrimeReact (.p-dialog) */
+.p-dialog {
+  border-radius: 16px !important;
+  border: 1px solid var(--border-default) !important;
+  background: var(--surface-card) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18) !important;
+  overflow: hidden !important;
+}
+
+.p-dialog .p-dialog-header {
+  padding: 18px 24px !important;
+  border-bottom: 1px solid var(--border-default) !important;
+  background: var(--surface-card) !important;
+  color: var(--text-main) !important;
+}
+
+.p-dialog .p-dialog-header .p-dialog-title {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  color: var(--text-main) !important;
+}
+
+.p-dialog .p-dialog-content {
+  padding: 22px 24px !important;
+  background: var(--surface-card) !important;
+  color: var(--text-body) !important;
+}
+
+.p-dialog .p-dialog-footer {
+  padding: 16px 24px !important;
+  border-top: 1px solid var(--border-default) !important;
+  background: var(--surface-app) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+}
+
+/* Máscara de fondo modal (.p-dialog-mask) */
+.p-dialog-mask {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(2px) !important;
 }
