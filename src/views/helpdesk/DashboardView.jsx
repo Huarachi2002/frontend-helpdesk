@@ -65,7 +65,7 @@ export default function DashboardView() {
             size="small"
             loading={loading}
             onClick={fetchData}
-            icon={<IconRefresh size={16} className="p-button-icon-left" />}
+            icon={<IconRefresh size={16} />}
           />
         </div>
       </div>

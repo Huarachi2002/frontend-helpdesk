@@ -409,7 +409,7 @@ export default function ReportView() {
               size="small"
               loading={exportingFormat === 'csv'}
               onClick={() => doExport('csv')}
-              icon={<IconFileSpreadsheet size={16} className="p-button-icon-left" />}
+              icon={<IconFileSpreadsheet size={16} />}
             />
 
             <Button
@@ -419,7 +419,7 @@ export default function ReportView() {
               size="small"
               loading={exportingFormat === 'excel'}
               onClick={() => doExport('excel')}
-              icon={<IconTable size={16} className="p-button-icon-left" />}
+              icon={<IconTable size={16} />}
             />
 
             <Button
@@ -429,7 +429,7 @@ export default function ReportView() {
               size="small"
               loading={exportingFormat === 'pdf'}
               onClick={() => doExport('pdf')}
-              icon={<IconFileTypePdf size={16} className="p-button-icon-left" />}
+              icon={<IconFileTypePdf size={16} />}
             />
           </div>
         </div>

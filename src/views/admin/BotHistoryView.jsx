@@ -126,7 +126,7 @@ export default function BotHistoryView() {
             size="small"
             loading={loading}
             onClick={() => loadData(page, filters)}
-            icon={<IconRefresh size={16} className="p-button-icon-left" />}
+            icon={<IconRefresh size={16} />}
             label="Actualizar"
           />
         </div>
@@ -181,7 +181,7 @@ export default function BotHistoryView() {
             text
             size="small"
             onClick={clearFilters}
-            icon={<IconFilterOff size={16} className="p-button-icon-left" />}
+            icon={<IconFilterOff size={16} />}
           />
         )}
       </div>
@@ -337,7 +337,8 @@ export default function BotHistoryView() {
               disabled={meta.current_page >= meta.last_page}
               onClick={() => changePage(meta.current_page + 1)}
               label="Siguiente"
-              icon={<IconChevronRight size={16} className="p-button-icon-right" />}
+              icon={<IconChevronRight size={16} />}
+              iconPos="right"
             />
           </div>
         </div>
@@ -359,9 +360,9 @@ export default function BotHistoryView() {
         }
       >
         {selectedItem && (
-          <div className="modal-content">
+          <div className="bot-detail-content">
             {/* Barra de estado superior del modal */}
-            <div className="modal-status-bar">
+            <div className="bot-detail-status-bar">
               <Tag
                 value={
                   selectedItem.resolved
@@ -372,12 +373,12 @@ export default function BotHistoryView() {
                 rounded
               />
 
-              <div className="modal-meta-chips">
-                <span className="meta-chip-item">
+              <div className="bot-detail-meta-chips">
+                <span className="bot-detail-meta-chip">
                   <IconBolt size={14} className="text-amber" />
                   <b>{selectedItem.resolution_time_seconds} seg</b>
                 </span>
-                <span className="meta-chip-item">
+                <span className="bot-detail-meta-chip">
                   <IconCalendar size={14} className="text-slate" />
                   {formatDate(selectedItem.created_at)}
                 </span>

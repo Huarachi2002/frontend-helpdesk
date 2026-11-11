@@ -7,7 +7,7 @@
   padding: 20px;
 }
 
-.login-card {
+.login-wrapper .login-card {
   width: 100%;
   max-width: 420px;
   background: var(--surface-card);
@@ -17,12 +17,12 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.login-brand {
+.login-wrapper .login-brand {
   text-align: center;
   margin-bottom: 28px;
 }
 
-.brand-avatar {
+.login-wrapper .brand-avatar {
   width: 56px;
   height: 56px;
   margin: 0 auto 14px;
@@ -35,7 +35,7 @@
   box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
 }
 
-.brand-title {
+.login-wrapper .brand-title {
   font-size: 22px;
   font-weight: 800;
   color: var(--text-main);
@@ -43,20 +43,20 @@
   margin: 0;
 }
 
-.brand-desc {
+.login-wrapper .brand-desc {
   font-size: 13px;
   color: var(--text-muted);
   margin-top: 6px;
   line-height: 1.4;
 }
 
-.login-form {
+.login-wrapper .login-form {
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
-.login-error-alert {
+.login-wrapper .login-error-alert {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -68,36 +68,36 @@
   font-size: 13px;
 }
 
-.error-alert-icon {
+.login-wrapper .error-alert-icon {
   flex-shrink: 0;
 }
 
-.form-group {
+.login-wrapper .form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.input-label {
+.login-wrapper .input-label {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text-body);
 }
 
-.input-container {
+.login-wrapper .input-container {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.field-icon {
+.login-wrapper .field-icon {
   position: absolute;
   left: 12px;
   color: var(--text-subtle);
   pointer-events: none;
 }
 
-.field-input {
+.login-wrapper .field-input {
   width: 100%;
   padding: 10px 40px 10px 38px;
   background: var(--surface-input);
@@ -109,13 +109,13 @@
   transition: all 0.2s ease;
 }
 
-.field-input:focus {
+.login-wrapper .field-input:focus {
   background: var(--surface-input-focus);
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
-.password-toggle-btn {
+.login-wrapper .password-toggle-btn {
   position: absolute;
   right: 10px;
   background: transparent;
@@ -128,18 +128,18 @@
   transition: color 0.15s;
 }
 
-.password-toggle-btn:hover {
+.login-wrapper .password-toggle-btn:hover {
   color: var(--color-slate-600);
 }
 
-.login-submit-btn {
+.login-wrapper .login-submit-btn {
   width: 100%;
   padding: 11px;
   font-weight: 700;
   margin-top: 6px;
 }
 
-.login-footer {
+.login-wrapper .login-footer {
   margin-top: 24px;
   text-align: center;
   font-size: 11.5px;
@@ -147,8 +147,3 @@
   border-top: 1px solid var(--border-subtle);
   padding-top: 14px;
 }
-
-.p-button-icon-left {
-  margin-right: 6px;
-}
-

@@ -158,7 +158,7 @@ export default function TicketListView() {
             size="small"
             loading={loading}
             onClick={() => loadTickets(page, filters)}
-            icon={<IconRefresh size={16} className="p-button-icon-left" />}
+            icon={<IconRefresh size={16} />}
             label="Actualizar"
           />
         </div>
@@ -231,7 +231,7 @@ export default function TicketListView() {
               text
               size="small"
               onClick={clearFilters}
-              icon={<IconFilterOff size={16} className="p-button-icon-left" />}
+              icon={<IconFilterOff size={16} />}
             />
           )}
         </div>
@@ -366,7 +366,7 @@ export default function TicketListView() {
                         severity="secondary"
                         outlined
                         size="small"
-                        icon={<IconEye size={15} className="p-button-icon-left" />}
+                        icon={<IconEye size={15} />}
                       />
                     </Link>
                   </td>
@@ -402,7 +402,8 @@ export default function TicketListView() {
               disabled={pagination.current_page >= pagination.last_page}
               onClick={() => changePage(pagination.current_page + 1)}
               label="Siguiente"
-              icon={<IconChevronRight size={16} className="p-button-icon-right" />}
+              icon={<IconChevronRight size={16} />}
+              iconPos="right"
             />
           </div>
         </div>

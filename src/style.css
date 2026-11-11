@@ -72,3 +72,15 @@ button, input, select, textarea {
 .fade-leave-to {
   opacity: 0;
 }
+
+/* PrimeReact Tag Theme Enhancements */
+.p-tag.p-tag-secondary {
+  background-color: var(--status-closed-bg);
+  color: var(--status-closed-text);
+}
+
+.p-tag.p-tag-contrast {
+  background-color: var(--status-waiting-bg);
+  color: var(--status-waiting-text);
+  border: 1px solid var(--color-purple-200);
+}

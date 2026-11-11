@@ -8,3 +8,4 @@ if (typeof globalThis !== 'undefined') {
 }
 
 export { React }
+

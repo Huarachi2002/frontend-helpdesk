@@ -471,7 +471,7 @@ export default function TicketDetailView() {
                     loading={actionLoading}
                     disabled={!newStatus}
                     onClick={handleStatusChange}
-                    icon={<IconDeviceFloppy size={16} className="p-button-icon-left" />}
+                    icon={<IconDeviceFloppy size={16} />}
                   />
                 </>
               )}

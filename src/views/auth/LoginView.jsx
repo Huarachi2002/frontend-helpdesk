@@ -125,7 +125,7 @@ export default function LoginView() {
             severity="primary"
             className="login-submit-btn"
             loading={loading}
-            icon={<IconLogin size={18} className="p-button-icon-left" />}
+            icon={<IconLogin size={18} />}
           />
         </form>
 

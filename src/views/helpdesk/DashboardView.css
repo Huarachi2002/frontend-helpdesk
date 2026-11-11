@@ -4,7 +4,7 @@
   gap: 24px;
 }
 
-.page-header {
+.dashboard-page .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -12,7 +12,7 @@
   gap: 16px;
 }
 
-.page-title {
+.dashboard-page .page-title {
   font-size: 24px;
   font-weight: 700;
   color: var(--text-main);
@@ -20,37 +20,38 @@
   margin: 0;
 }
 
-.page-subtitle {
+.dashboard-page .page-subtitle {
   font-size: 14px;
   color: var(--text-muted);
   margin-top: 4px;
 }
 
 /* Grid KPIs */
-.kpi-grid {
+.dashboard-page .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
 }
 
-.kpi-card {
+.dashboard-page .kpi-card {
   background: var(--surface-card);
   border: 1px solid var(--border-default);
   border-radius: 14px;
   padding: 22px;
   display: flex;
+  flex-direction: row !important;
   align-items: center;
   gap: 18px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.kpi-card:hover {
+.dashboard-page .kpi-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07);
 }
 
-.kpi-icon-wrap {
+.dashboard-page .kpi-icon-wrap {
   width: 54px;
   height: 54px;
   border-radius: 12px;
@@ -60,17 +61,17 @@
   flex-shrink: 0;
 }
 
-.bg-blue    { background: var(--kpi-tickets-bg); color: var(--kpi-tickets-icon); }
-.bg-amber   { background: var(--kpi-frt-bg);     color: var(--kpi-frt-icon); }
-.bg-emerald { background: var(--kpi-mttr-bg);    color: var(--kpi-mttr-icon); }
-.bg-purple  { background: var(--kpi-bot-bg);     color: var(--kpi-bot-icon); }
+.dashboard-page .bg-blue    { background: var(--kpi-tickets-bg); color: var(--kpi-tickets-icon); }
+.dashboard-page .bg-amber   { background: var(--kpi-frt-bg);     color: var(--kpi-frt-icon); }
+.dashboard-page .bg-emerald { background: var(--kpi-mttr-bg);    color: var(--kpi-mttr-icon); }
+.dashboard-page .bg-purple  { background: var(--kpi-bot-bg);     color: var(--kpi-bot-icon); }
 
-.kpi-content {
+.dashboard-page .kpi-content {
   display: flex;
   flex-direction: column;
 }
 
-.kpi-value {
+.dashboard-page .kpi-value {
   font-size: 28px;
   font-weight: 800;
   color: var(--text-main);
@@ -78,48 +79,49 @@
   letter-spacing: -0.5px;
 }
 
-.kpi-label {
+.dashboard-page .kpi-label {
   font-size: 13.5px;
   font-weight: 600;
   color: var(--text-body);
   margin-top: 4px;
 }
 
-.kpi-subtext {
+.dashboard-page .kpi-subtext {
   font-size: 11.5px;
   color: var(--text-subtle);
   margin-top: 2px;
 }
 
 /* Skeleton loader */
-.skeleton-card {
+.dashboard-page .skeleton-card {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 16px;
 }
 
-.skeleton-text {
+.dashboard-page .skeleton-text {
   flex: 1;
 }
 
-.mb-2 {
+.dashboard-page .mb-2 {
   margin-bottom: 8px;
 }
 
 /* Layout de Secciones */
-.dashboard-sections {
+.dashboard-page .dashboard-sections {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 20px;
 }
 
 @media (max-width: 1024px) {
-  .dashboard-sections {
+  .dashboard-page .dashboard-sections {
     grid-template-columns: 1fr;
   }
 }
 
-.section-card {
+.dashboard-page .section-card {
   background: var(--surface-card);
   border: 1px solid var(--border-default);
   border-radius: 14px;
@@ -127,14 +129,14 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.section-header {
+.dashboard-page .section-header {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 8px;
 }
 
-.section-icon {
+.dashboard-page .section-icon {
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -145,27 +147,27 @@
   justify-content: center;
 }
 
-.section-title {
+.dashboard-page .section-title {
   font-size: 16px;
   font-weight: 700;
   color: var(--text-main);
   margin: 0;
 }
 
-.section-desc {
+.dashboard-page .section-desc {
   font-size: 13px;
   color: var(--text-muted);
   margin-bottom: 18px;
 }
 
 /* Actions Grid */
-.actions-grid {
+.dashboard-page .actions-grid {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.action-card {
+.dashboard-page .action-card {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -174,16 +176,18 @@
   border: 1px solid var(--border-default);
   border-radius: 10px;
   transition: all 0.2s ease;
+  color: inherit;
+  text-decoration: none;
 }
 
-.action-card:hover {
+.dashboard-page .action-card:hover {
   background: var(--surface-card);
   border-color: var(--color-primary-400);
   transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
 }
 
-.action-card-icon {
+.dashboard-page .action-card-icon {
   width: 42px;
   height: 42px;
   border-radius: 10px;
@@ -193,47 +197,47 @@
   flex-shrink: 0;
 }
 
-.icon-blue    { background: var(--color-primary-100); color: var(--color-primary-600); }
-.icon-purple  { background: var(--color-purple-100);  color: var(--color-purple-600); }
-.icon-emerald { background: var(--color-success-100); color: var(--color-success-600); }
+.dashboard-page .icon-blue    { background: var(--color-primary-100); color: var(--color-primary-600); }
+.dashboard-page .icon-purple  { background: var(--color-purple-100);  color: var(--color-purple-600); }
+.dashboard-page .icon-emerald { background: var(--color-success-100); color: var(--color-success-600); }
 
-.action-card-info {
+.dashboard-page .action-card-info {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-.action-title {
+.dashboard-page .action-title {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-main);
 }
 
-.action-desc {
+.dashboard-page .action-desc {
   font-size: 12px;
   color: var(--text-muted);
   margin-top: 2px;
 }
 
-.action-arrow {
+.dashboard-page .action-arrow {
   color: var(--text-subtle);
   transition: transform 0.2s, color 0.2s;
 }
 
-.action-card:hover .action-arrow {
+.dashboard-page .action-card:hover .action-arrow {
   color: var(--color-primary-600);
   transform: translateX(3px);
 }
 
 /* Health status list */
-.health-list {
+.dashboard-page .health-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-bottom: 20px;
 }
 
-.health-item {
+.dashboard-page .health-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -243,7 +247,7 @@
   border: 1px solid var(--border-subtle);
 }
 
-.health-status-icon {
+.dashboard-page .health-status-icon {
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -253,56 +257,56 @@
   flex-shrink: 0;
 }
 
-.health-status-icon.success {
+.dashboard-page .health-status-icon.success {
   background: var(--color-success-50);
   color: var(--color-success-500);
 }
 
-.health-info {
+.dashboard-page .health-info {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-.health-name {
+.dashboard-page .health-name {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-body);
 }
 
-.health-sub {
+.dashboard-page .health-sub {
   font-size: 11.5px;
   color: var(--text-muted);
 }
 
 /* Bot summary card */
-.bot-summary-card {
+.dashboard-page .bot-summary-card {
   padding: 16px;
   background: var(--surface-app);
   border: 1px dashed var(--border-strong);
   border-radius: 10px;
 }
 
-.bot-summary-stat {
+.dashboard-page .bot-summary-stat {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
 }
 
-.bot-stat-title {
+.dashboard-page .bot-stat-title {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--color-slate-600);
 }
 
-.bot-stat-val {
+.dashboard-page .bot-stat-val {
   font-size: 14px;
   font-weight: 700;
   color: var(--color-warning-500);
 }
 
-.bot-summary-bar {
+.dashboard-page .bot-summary-bar {
   width: 100%;
   height: 8px;
   background: var(--border-default);
@@ -311,21 +315,16 @@
   margin-bottom: 8px;
 }
 
-.bot-progress {
+.dashboard-page .bot-progress {
   height: 100%;
   background: linear-gradient(90deg, var(--color-warning-500), var(--color-danger-500));
   border-radius: 4px;
   transition: width 0.4s ease;
 }
 
-.bot-hint {
+.dashboard-page .bot-hint {
   font-size: 11.5px;
   color: var(--text-muted);
   display: block;
   line-height: 1.4;
 }
-
-.p-button-icon-left {
-  margin-right: 6px;
-}
-
