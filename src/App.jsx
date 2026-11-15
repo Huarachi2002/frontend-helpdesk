@@ -3,7 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { ConfirmDialog } from 'primereact/confirmdialog'
 
 import { ToastProvider } from './context/ToastContext.jsx'
-import { ProtectedRoute, GuestRoute } from './components/ProtectedRoute.jsx'
+import { ProtectedRoute, GuestRoute, RoleDefaultRedirect } from './components/ProtectedRoute.jsx'
+import { ROLES } from './utils/permissions.js'
 import AppLayout from './layouts/AppLayout.jsx'
 
 import LoginView from './views/auth/LoginView.jsx'
@@ -13,13 +14,14 @@ import TicketDetailView from './views/helpdesk/TicketDetailView.jsx'
 import BotHistoryView from './views/admin/BotHistoryView.jsx'
 import ReportView from './views/reports/ReportView.jsx'
 import UsersManagementView from './views/admin/UsersManagementView.jsx'
+import CategoriesManagementView from './views/admin/CategoriesManagementView.jsx'
 
 export default function App() {
   return (
     <ToastProvider>
       <ConfirmDialog />
       <Routes>
-        {/* Ruta pública para invitados */}
+        {/* Ruta pública para invitados / login */}
         <Route
           path="/login"
           element={
@@ -29,7 +31,7 @@ export default function App() {
           }
         />
 
-        {/* Rutas protegidas dentro del AppLayout */}
+        {/* Rutas autenticadas dentro del Layout Maestro */}
         <Route
           path="/"
           element={
@@ -38,26 +40,81 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardView />} />
-          <Route path="tickets" element={<TicketListView />} />
-          <Route path="tickets/:id" element={<TicketDetailView />} />
-          <Route path="bot-history" element={<BotHistoryView />} />
-          <Route path="reports" element={<ReportView />} />
+          {/* Redirección dinámica en la raíz según rol: Admin -> Dashboard | Soporte -> Tickets */}
+          <Route index element={<RoleDefaultRedirect />} />
+
+          {/* Dashboard General: Exclusivo para Administrador */}
+          <Route
+            path="dashboard"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                <DashboardView />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Gestión de Tickets: Permitido para Administrador y Soporte / Técnico */}
+          <Route
+            path="tickets"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.SUPPORT]}>
+                <TicketListView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="tickets/:id"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.SUPPORT]}>
+                <TicketDetailView />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Historial del Bot de IA: Permitido para Administrador y Soporte / Técnico */}
+          <Route
+            path="bot-history"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.SUPPORT]}>
+                <BotHistoryView />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Reportes & KPIs: Permitido para Administrador y Soporte / Técnico */}
+          <Route
+            path="reports"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.SUPPORT]}>
+                <ReportView />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Gestión de Usuarios y Roles: Exclusivo Administrador */}
           <Route
             path="users"
             element={
-              <ProtectedRoute requiresAdmin>
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
                 <UsersManagementView />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Gestión de Clasificación de Categorías: Exclusivo Administrador */}
+          <Route
+            path="categories"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                <CategoriesManagementView />
               </ProtectedRoute>
             }
           />
         </Route>
 
-        {/* Captura de rutas desconocidas */}
+        {/* Captura de rutas desconocidas -> redirige a la raíz con resolución inteligente de rol */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ToastProvider>
   )
 }
-

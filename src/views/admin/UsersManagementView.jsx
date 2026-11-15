@@ -9,11 +9,30 @@ import {
   IconTrash,
   IconShieldCheck,
   IconHeadset,
-  IconActivity,
   IconUser,
   IconInfoCircle,
   IconAlertCircle,
+  IconCheck,
+  IconKey,
+  IconSchool,
+  IconFolders,
+  IconClock,
+  IconLock,
+  IconEye,
+  IconEyeOff,
+  IconChevronLeft,
+  IconChevronRight,
+  IconToggleLeft,
+  IconToggleRight,
+  IconFilter,
+  IconUserCheck,
+  IconUserX,
+  IconTicket,
 } from '@tabler/icons-react'
+import { Button } from 'primereact/button'
+import { Tag } from 'primereact/tag'
+import { Skeleton } from 'primereact/skeleton'
+import { confirmDialog } from 'primereact/confirmdialog'
 import { useUsersStore } from '../../stores/usersStore.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { useToast } from '../../context/ToastContext.jsx'
@@ -21,15 +40,15 @@ import './UsersManagementView.css'
 
 const defaultForm = {
   id: null,
-  name: '',
-  email: '',
+  nombre: '',
+  apellido: '',
+  correo: '',
   password: '',
-  role: 'support',
-  department: '',
+  role: 'TECNICO',
+  sesion: true,
+  moodle_user_id: '',
   is_active: true,
-  tier_level: 1,
-  allowed_priorities: ['low', 'medium', 'high', 'critical'],
-  max_active_tickets: 10,
+  allowed_priorities: ['medium', 'high', 'critical'],
   category_ids: [],
 }
 
@@ -49,10 +68,10 @@ export default function UsersManagementView() {
   const { showToast } = useToast()
 
   const [page, setPage] = useState(1)
+  const [scopeFilter, setScopeFilter] = useState('all') // 'all' | 'staff' | 'campus'
   const [filters, setFilters] = useState({
     search: '',
     role: '',
-    tier_level: '',
     is_active: '',
   })
 
@@ -63,13 +82,14 @@ export default function UsersManagementView() {
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [formData, setFormData] = useState({ ...defaultForm })
+  const [showPassword, setShowPassword] = useState(false)
+  const [modalCatSearch, setModalCatSearch] = useState('')
 
   const loadUsers = useCallback(
     (targetPage = page, currentFilters = filters) => {
       const params = { page: targetPage }
       if (currentFilters.search) params.search = currentFilters.search
       if (currentFilters.role) params.role = currentFilters.role
-      if (currentFilters.tier_level) params.tier_level = currentFilters.tier_level
       if (currentFilters.is_active !== '') params.is_active = currentFilters.is_active
       fetchUsers(params).catch(() => {})
     },
@@ -78,36 +98,43 @@ export default function UsersManagementView() {
 
   useEffect(() => {
     loadUsers(page, filters)
-    fetchCategories()
+    fetchCategories().catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadUsers(page, filters)
   }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Métricas rápidas calculadas
+  // Métricas rápidas
   const totalUsersCount = pagination?.total ?? users.length
-  const supportAgentsCount = useMemo(
-    () => users.filter((u) => u.role === 'support').length,
+  const tecnicosCount = useMemo(
+    () => users.filter((u) => (u.rol?.nombre || u.role) === 'TECNICO' || u.role === 'support').length,
     [users]
   )
-  const activeAgentsCount = useMemo(
-    () =>
-      users.filter(
-        (u) =>
-          (u.role === 'support' || u.role === 'admin') &&
-          u.support_agent?.is_active
-      ).length,
+  const directoresCount = useMemo(
+    () => users.filter((u) => (u.rol?.nombre || u.role) === 'DIRECTOR' || u.role === 'admin').length,
     [users]
   )
-  const adminsCount = useMemo(
-    () => users.filter((u) => u.role === 'admin').length,
+  const activeCount = useMemo(
+    () => users.filter((u) => u.activo ?? u.is_active).length,
     [users]
   )
 
-  const isAgent = (u) => u.role === 'support' || u.role === 'admin'
-  const isAgentRoleSelected =
-    formData.role === 'support' || formData.role === 'admin'
+  const inInternalRole = (role) => {
+    const r = String(role || '').toUpperCase()
+    return r === 'DIRECTOR' || r === 'TECNICO' || r === 'ADMIN' || r === 'SUPPORT'
+  }
+
+  // Filtrado de scope (Pestañas rápidas: Todos / Equipo Soporte / Campus)
+  const displayedUsers = useMemo(() => {
+    if (scopeFilter === 'staff') {
+      return users.filter((u) => inInternalRole(u.rol?.nombre || u.role))
+    }
+    if (scopeFilter === 'campus') {
+      return users.filter((u) => !inInternalRole(u.rol?.nombre || u.role))
+    }
+    return users
+  }, [users, scopeFilter])
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target
@@ -127,10 +154,21 @@ export default function UsersManagementView() {
     loadUsers(1, filters)
   }
 
+  const resetFilters = () => {
+    const reset = { search: '', role: '', is_active: '' }
+    setFilters(reset)
+    setScopeFilter('all')
+    setPage(1)
+    loadUsers(1, reset)
+  }
+
   const openCreateModal = () => {
+    fetchCategories().catch(() => {})
     setIsEditing(false)
     setFormError('')
     setActiveTab('account')
+    setShowPassword(false)
+    setModalCatSearch('')
     setFormData({
       ...defaultForm,
       category_ids: categories.map((c) => c.id),
@@ -139,25 +177,37 @@ export default function UsersManagementView() {
   }
 
   const openEditModal = (u) => {
+    fetchCategories().catch(() => {})
     setIsEditing(true)
     setFormError('')
     setActiveTab('account')
+    setShowPassword(false)
+    setModalCatSearch('')
 
-    const agent = u.support_agent || {}
+    const rolStr = u.rol?.nombre || (u.role === 'admin' ? 'DIRECTOR' : u.role === 'support' ? 'TECNICO' : 'ESTUDIANTE')
+
+    // Prioridades asignadas
+    const prioCodes = u.prioridades
+      ? u.prioridades.map((p) => (p.codigo || '').toLowerCase())
+      : u.support_agent?.allowed_priorities || ['medium', 'high', 'critical']
+
+    // Categorías asignadas
+    const catIds = u.categorias
+      ? u.categorias.map((c) => c.id)
+      : u.support_agent?.categories ? u.support_agent.categories.map((c) => c.id) : []
+
     setFormData({
       id: u.id,
-      name: u.name,
-      email: u.email,
+      nombre: u.nombre || (u.name ? u.name.split(' ')[0] : ''),
+      apellido: u.apellido || (u.name ? u.name.split(' ').slice(1).join(' ') : ''),
+      correo: u.correo || u.email || '',
       password: '',
-      role: u.role,
-      department: u.department || '',
-      is_active: agent.is_active ?? true,
-      tier_level: agent.tier_level ?? 1,
-      allowed_priorities: agent.allowed_priorities
-        ? [...agent.allowed_priorities]
-        : ['low', 'medium', 'high', 'critical'],
-      max_active_tickets: agent.max_active_tickets ?? 10,
-      category_ids: agent.categories ? agent.categories.map((c) => c.id) : [],
+      role: rolStr,
+      sesion: Boolean(u.sesion ?? inInternalRole(rolStr)),
+      moodle_user_id: u.moodle_user_id || '',
+      is_active: Boolean(u.activo ?? u.is_active ?? true),
+      allowed_priorities: prioCodes,
+      category_ids: catIds,
     })
 
     setModalVisible(true)
@@ -165,6 +215,16 @@ export default function UsersManagementView() {
 
   const closeModal = () => {
     setModalVisible(false)
+  }
+
+  const handleRoleChange = (e) => {
+    const nextRole = e.target.value
+    const isInternal = inInternalRole(nextRole)
+    setFormData((prev) => ({
+      ...prev,
+      role: nextRole,
+      sesion: isInternal, // Habilitar sesión web por defecto para roles internos
+    }))
   }
 
   const selectAllCategories = () => {
@@ -196,27 +256,52 @@ export default function UsersManagementView() {
 
   const submitForm = async (e) => {
     e.preventDefault()
+    if (!formData.nombre.trim()) {
+      setFormError('El nombre del usuario es obligatorio.')
+      setActiveTab('account')
+      return
+    }
+    if (!formData.correo.trim()) {
+      setFormError('El correo electrónico institucional es obligatorio.')
+      setActiveTab('account')
+      return
+    }
+
     setFormSubmitting(true)
     setFormError('')
 
     try {
-      const payload = { ...formData }
-      if (isEditing && !payload.password) {
-        delete payload.password
+      const payload = {
+        id: formData.id,
+        nombre: formData.nombre.trim(),
+        apellido: formData.apellido ? formData.apellido.trim() : null,
+        name: `${formData.nombre.trim()} ${formData.apellido ? formData.apellido.trim() : ''}`.trim(),
+        correo: formData.correo.trim(),
+        email: formData.correo.trim(),
+        role: formData.role,
+        sesion: formData.sesion,
+        moodle_user_id: formData.moodle_user_id ? Number(formData.moodle_user_id) : null,
+        is_active: formData.is_active,
+        allowed_priorities: formData.allowed_priorities,
+        category_ids: formData.category_ids,
+      }
+
+      if (formData.password) {
+        payload.password = formData.password
       }
 
       const res = await saveUser(payload)
       showToast({
         severity: 'success',
         summary: isEditing ? 'Usuario Actualizado' : 'Usuario Creado',
-        detail: res.message || 'Operación completada con éxito.',
+        detail: res.message || 'Operación completada con éxito en la base de datos.',
         life: 3500,
       })
       closeModal()
       loadUsers(page, filters)
     } catch (err) {
       setFormError(
-        err.response?.data?.message || 'Error al guardar los datos del usuario.'
+        err.response?.data?.message || 'Error al guardar el usuario en el sistema.'
       )
     } finally {
       setFormSubmitting(false)
@@ -228,158 +313,245 @@ export default function UsersManagementView() {
       const res = await toggleStatus(u.id)
       showToast({
         severity: 'info',
-        summary: 'Disponibilidad Actualizada',
-        detail: `El agente ${u.name} ahora está ${
-          res.is_active ? 'Activo' : 'en Pausa'
-        }.`,
-        life: 2500,
+        summary: 'Estado de Cuenta Actualizado',
+        detail: res.message || `Disponibilidad de ${u.nombre || u.name} modificada.`,
+        life: 3000,
       })
+      loadUsers(page, filters)
     } catch (err) {
       showToast({
         severity: 'error',
         summary: 'Error',
         detail: err.response?.data?.message || 'No se pudo actualizar el estado.',
-        life: 3500,
+        life: 4000,
       })
     }
   }
 
-  const confirmDeleteUser = async (u) => {
-    if (
-      window.confirm(
-        `¿Estás seguro de que deseas eliminar permanentemente a "${u.name}"?`
-      )
-    ) {
-      try {
-        await deleteUserRecord(u.id)
-        showToast({
-          severity: 'success',
-          summary: 'Usuario Eliminado',
-          detail: `Se eliminó al usuario ${u.name} correctamente.`,
-          life: 3000,
-        })
-      } catch (err) {
-        showToast({
-          severity: 'error',
-          summary: 'No se pudo eliminar',
-          detail: err.response?.data?.message || 'Error al eliminar el usuario.',
-          life: 4000,
-        })
-      }
+  const confirmDeleteUser = (u) => {
+    const isSelf = currentUser?.id === u.id
+    if (isSelf) {
+      showToast({
+        severity: 'warn',
+        summary: 'Operación no permitida',
+        detail: 'No puedes eliminar tu propia cuenta en sesión activa.',
+        life: 3500,
+      })
+      return
     }
+
+    const hasTickets = (u.assigned_tickets_count > 0) || (u.created_tickets_count > 0)
+
+    confirmDialog({
+      header: 'Confirmar Eliminación de Usuario',
+      message: (
+        <div className="confirm-delete-body">
+          <p>
+            ¿Estás seguro de que deseas eliminar permanentemente al usuario{' '}
+            <strong>{u.nombre && u.apellido ? `${u.nombre} ${u.apellido}` : u.name || u.nombre}</strong> (
+            <em>{u.correo || u.email}</em>)?
+          </p>
+          {hasTickets && (
+            <div className="alert-delete-warning">
+              <IconAlertCircle size={18} />
+              <span>
+                Este usuario tiene tickets asociados. Si la eliminación es rechazada por integridad referencial,
+                se recomienda cambiar su estado a <strong>Inactivo</strong> para suspender el acceso.
+              </span>
+            </div>
+          )}
+        </div>
+      ),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, Eliminar Cuenta',
+      rejectLabel: 'Cancelar',
+      acceptClassName: 'p-button-danger',
+      accept: async () => {
+        try {
+          await deleteUserRecord(u.id)
+          showToast({
+            severity: 'success',
+            summary: 'Usuario Eliminado',
+            detail: 'Registro eliminado correctamente de la base de datos.',
+            life: 3000,
+          })
+          loadUsers(page, filters)
+        } catch (err) {
+          showToast({
+            severity: 'error',
+            summary: 'No se pudo eliminar',
+            detail:
+              err.response?.data?.message ||
+              'El usuario cuenta con incidencias históricas vinculadas. Considera desactivar su cuenta.',
+            life: 4500,
+          })
+        }
+      },
+    })
   }
 
-  const getUserInitials = (name) => {
-    if (!name) return 'U'
-    const parts = name.trim().split(' ')
-    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-    return name.slice(0, 2).toUpperCase()
-  }
-
-  const formatRole = (role) => {
+  const formatRole = (r) => {
     const map = {
-      admin: 'Administrador',
-      support: 'Soporte Técnico',
-      teacher: 'Docente',
-      estudiante: 'Estudiante',
+      DIRECTOR: 'Director (Admin)',
+      TECNICO: 'Técnico de Soporte',
+      DOCENTE: 'Docente Moodle',
+      ESTUDIANTE: 'Estudiante Campus',
+      VISITANTE: 'Visitante Externo',
+      admin: 'Director (Admin)',
+      support: 'Técnico de Soporte',
+      teacher: 'Docente Moodle',
+      estudiante: 'Estudiante Campus',
     }
-    return map[role] ?? role
-  }
-
-  const tierLabel = (t) => {
-    const map = {
-      1: 'Básico',
-      2: 'Intermedio',
-      3: 'Especialista',
-    }
-    return map[t] ?? 'Básico'
+    return map[r] ?? r
   }
 
   const priorityLabel = (p) => {
     const map = {
-      low: 'Baja',
-      medium: 'Media',
-      high: 'Alta',
-      critical: 'Crítica',
+      low: 'Baja (72h)',
+      medium: 'Media (48h)',
+      high: 'Alta (24h)',
+      critical: 'Crítica (4h)',
     }
-    return map[p] ?? p
+    return map[p?.toLowerCase?.()] ?? p
   }
 
+  // Filtrado de categorías dentro del modal
+  const filteredModalCategories = useMemo(() => {
+    if (!modalCatSearch.trim()) return categories
+    const q = modalCatSearch.toLowerCase()
+    return categories.filter(
+      (c) =>
+        (c.nombre || c.name || '').toLowerCase().includes(q) ||
+        (c.descripcion || c.description || '').toLowerCase().includes(q)
+    )
+  }, [categories, modalCatSearch])
+
   return (
-    <div className="users-management-view">
-      {/* Header */}
+    <div className="users-view">
+      {/* Encabezado Principal */}
       <div className="page-header">
-        <div className="header-content">
-          <h1 className="page-title">Gestión de Usuarios y Roles de Agente</h1>
+        <div className="header-titles">
+          <div className="title-with-badge">
+            <h1 className="page-title">Gestión de Usuarios y Roles Institucionales</h1>
+          </div>
           <p className="page-subtitle">
-            Administra usuarios del campus, niveles de atención técnica (Tier), prioridades y categorías designadas para tickets.
+            Administra cuentas de personal técnico (Soporte y Dirección) y usuarios del campus (Docentes, Estudiantes y Visitantes).
           </p>
         </div>
 
-        <button className="btn-primary" onClick={openCreateModal}>
-          <IconUserPlus size={18} />
-          <span>Nuevo Usuario</span>
-        </button>
-      </div>
-
-      {/* KPIs Rápidos */}
-      <div className="kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-icon icon-blue">
-            <IconUsers size={22} />
-          </div>
-          <div className="kpi-info">
-            <span className="kpi-value">{totalUsersCount}</span>
-            <span className="kpi-label">Total Usuarios</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon icon-emerald">
-            <IconHeadset size={22} />
-          </div>
-          <div className="kpi-info">
-            <span className="kpi-value">{supportAgentsCount}</span>
-            <span className="kpi-label">Agentes de Soporte</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon icon-amber">
-            <IconActivity size={22} />
-          </div>
-          <div className="kpi-info">
-            <span className="kpi-value">{activeAgentsCount}</span>
-            <span className="kpi-label">Agentes Activos</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon icon-indigo">
-            <IconShieldCheck size={22} />
-          </div>
-          <div className="kpi-info">
-            <span className="kpi-value">{adminsCount}</span>
-            <span className="kpi-label">Administradores</span>
-          </div>
+        <div className="header-actions">
+          <Button
+            label="Actualizar"
+            severity="secondary"
+            outlined
+            size="small"
+            loading={loading}
+            onClick={() => loadUsers(page, filters)}
+            icon={<IconRefresh size={16} />}
+          />
+          <button type="button" className="btn-primary" onClick={openCreateModal}>
+            <IconUserPlus size={17} />
+            <span>Nuevo Usuario</span>
+          </button>
         </div>
       </div>
 
-      {/* Filtros de búsqueda */}
+      {/* Tarjetas de Métricas Rápidas */}
+      <div className="metrics-grid">
+        <div className="metric-card">
+          <div className="metric-icon-wrap bg-blue-subtle">
+            <IconUsers size={22} className="text-blue" />
+          </div>
+          <div className="metric-info">
+            <span className="metric-label">Total Usuarios</span>
+            <span className="metric-val">{totalUsersCount}</span>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-icon-wrap bg-purple-subtle">
+            <IconHeadset size={22} className="text-purple" />
+          </div>
+          <div className="metric-info">
+            <span className="metric-label">Técnicos de Soporte</span>
+            <span className="metric-val text-purple">{tecnicosCount}</span>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-icon-wrap bg-amber-subtle">
+            <IconShieldCheck size={22} className="text-amber" />
+          </div>
+          <div className="metric-info">
+            <span className="metric-label">Dirección & Admin</span>
+            <span className="metric-val text-amber">{directoresCount}</span>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-icon-wrap bg-emerald-subtle">
+            <IconCheck size={22} className="text-emerald" />
+          </div>
+          <div className="metric-info">
+            <span className="metric-label">Cuentas Activas</span>
+            <span className="metric-val text-emerald">{activeCount}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Pestañas Segmentadas de Alcance (Ergonomía Superior) */}
+      <div className="segmented-scope-bar">
+        <div className="scope-pills">
+          <button
+            type="button"
+            className={`scope-pill ${scopeFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setScopeFilter('all')}
+          >
+            <IconUsers size={16} />
+            <span>Todos los Usuarios</span>
+            <span className="scope-count">{totalUsersCount}</span>
+          </button>
+
+          <button
+            type="button"
+            className={`scope-pill ${scopeFilter === 'staff' ? 'active' : ''}`}
+            onClick={() => setScopeFilter('staff')}
+          >
+            <IconHeadset size={16} />
+            <span>Equipo de Soporte & Dirección</span>
+            <span className="scope-count">{tecnicosCount + directoresCount}</span>
+          </button>
+
+          <button
+            type="button"
+            className={`scope-pill ${scopeFilter === 'campus' ? 'active' : ''}`}
+            onClick={() => setScopeFilter('campus')}
+          >
+            <IconSchool size={16} />
+            <span>Comunidad Campus Moodle</span>
+            <span className="scope-count">
+              {Math.max(0, totalUsersCount - (tecnicosCount + directoresCount))}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Barra de Filtros y Búsqueda */}
       <div className="filters-card">
         <div className="search-box">
           <IconSearch size={18} className="search-icon" />
           <input
-            value={filters.search}
             type="text"
-            placeholder="Buscar por nombre o correo electrónico..."
             className="search-input"
+            placeholder="Buscar por nombre, apellidos o correo institucional..."
+            value={filters.search}
             onChange={handleSearchChange}
             onKeyDown={(e) => e.key === 'Enter' && applySearch()}
           />
           {filters.search && (
             <button
-              className="clear-search-btn"
+              type="button"
+              className="search-clear-btn"
               onClick={() => {
                 const next = { ...filters, search: '' }
                 setFilters(next)
@@ -387,619 +559,786 @@ export default function UsersManagementView() {
               }}
               aria-label="Limpiar búsqueda"
             >
-              <IconX size={15} />
+              ✕
             </button>
           )}
         </div>
 
-        <div className="filter-controls">
-          <select
-            name="role"
-            value={filters.role}
-            className="select-filter"
-            onChange={handleFilterChange}
-          >
-            <option value="">Todos los roles</option>
-            <option value="admin">Administrador</option>
-            <option value="support">Soporte Técnico</option>
-            <option value="teacher">Docente</option>
-            <option value="estudiante">Estudiante</option>
-          </select>
+        <div className="filters-group">
+          <div className="filter-item">
+            <span className="filter-label">Rol:</span>
+            <select
+              name="role"
+              value={filters.role}
+              className="custom-select"
+              onChange={handleFilterChange}
+            >
+              <option value="">Todos los roles</option>
+              <option value="TECNICO">Técnico de Soporte</option>
+              <option value="DIRECTOR">Director / Admin</option>
+              <option value="DOCENTE">Docente Moodle</option>
+              <option value="ESTUDIANTE">Estudiante Moodle</option>
+              <option value="VISITANTE">Visitante</option>
+            </select>
+          </div>
 
-          <select
-            name="tier_level"
-            value={filters.tier_level}
-            className="select-filter"
-            onChange={handleFilterChange}
-          >
-            <option value="">Todos los niveles (Tier)</option>
-            <option value="1">Nivel 1 (Básico)</option>
-            <option value="2">Nivel 2 (Intermedio)</option>
-            <option value="3">Nivel 3 (Especialista)</option>
-          </select>
+          <div className="filter-item">
+            <span className="filter-label">Estado:</span>
+            <select
+              name="is_active"
+              value={filters.is_active}
+              className="custom-select"
+              onChange={handleFilterChange}
+            >
+              <option value="">Todos</option>
+              <option value="true">Solo Activos</option>
+              <option value="false">Solo Inactivos</option>
+            </select>
+          </div>
 
-          <select
-            name="is_active"
-            value={filters.is_active}
-            className="select-filter"
-            onChange={handleFilterChange}
-          >
-            <option value="">Todos los estados</option>
-            <option value="true">Activos</option>
-            <option value="false">En pausa / Inactivos</option>
-          </select>
-
-          <button
-            className="btn-refresh"
-            title="Recargar lista"
-            onClick={() => loadUsers(page, filters)}
-          >
-            <IconRefresh size={17} className={loading ? 'spin-icon' : ''} />
-          </button>
+          {(filters.search || filters.role || filters.is_active !== '' || scopeFilter !== 'all') && (
+            <button
+              type="button"
+              className="btn-clear-filters"
+              onClick={resetFilters}
+            >
+              <IconX size={14} />
+              <span>Limpiar filtros</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Tabla de Usuarios */}
-      <div className="table-container">
+      {/* Contenedor de la Tabla */}
+      <div className="table-card">
         {loading && users.length === 0 ? (
           <div className="loading-state">
-            <IconRefresh size={32} className="spin-icon text-blue" />
-            <span>Cargando directorio de usuarios y agentes...</span>
+            <Skeleton height="3rem" className="mb-2" />
+            <Skeleton height="3.5rem" className="mb-2" />
+            <Skeleton height="3.5rem" className="mb-2" />
+            <Skeleton height="3.5rem" />
           </div>
         ) : error ? (
           <div className="error-state">
-            <IconAlertCircle size={32} className="text-red" />
-            <span>{error}</span>
-            <button
-              className="btn-secondary mt-2"
+            <IconAlertCircle size={36} className="text-red" />
+            <h3>Error al cargar los usuarios</h3>
+            <p>{error}</p>
+            <Button
+              label="Reintentar"
+              severity="secondary"
+              size="small"
               onClick={() => loadUsers(page, filters)}
-            >
-              Reintentar
-            </button>
+              className="mt-2"
+            />
           </div>
-        ) : users.length === 0 ? (
+        ) : displayedUsers.length === 0 ? (
           <div className="empty-state">
-            <IconUsers size={42} className="text-muted" />
+            <IconUsers size={46} className="text-muted" strokeWidth={1.5} />
             <h3>No se encontraron usuarios</h3>
-            <p>Prueba ajustando los filtros de búsqueda o registra un nuevo usuario.</p>
+            <p>
+              {filters.search || filters.role || filters.is_active !== '' || scopeFilter !== 'all'
+                ? 'Ningún usuario coincide con los criterios de filtrado seleccionados.'
+                : 'Aún no se han registrado usuarios en el sistema.'}
+            </p>
+            {filters.search || filters.role || filters.is_active !== '' || scopeFilter !== 'all' ? (
+              <Button
+                label="Restablecer filtros"
+                severity="primary"
+                outlined
+                size="small"
+                onClick={resetFilters}
+              />
+            ) : (
+              <button type="button" className="btn-primary" onClick={openCreateModal}>
+                <IconUserPlus size={16} />
+                <span>Registrar Primer Usuario</span>
+              </button>
+            )}
           </div>
         ) : (
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>Usuario</th>
-                <th>Rol</th>
-                <th>Departamento</th>
-                <th>Nivel / Capacidad</th>
-                <th>Prioridades Asignadas</th>
-                <th>Categorías Designadas</th>
-                <th>Estado Agente</th>
-                <th className="text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  {/* Usuario */}
-                  <td>
-                    <div className="user-cell">
-                      <div className={`avatar avatar-${u.role}`}>
-                        {getUserInitials(u.name)}
-                      </div>
-                      <div className="user-meta">
-                        <span className="user-fullname">{u.name}</span>
-                        <span className="user-mail">{u.email}</span>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Rol */}
-                  <td>
-                    <span className={`role-pill role-${u.role}`}>
-                      {formatRole(u.role)}
-                    </span>
-                  </td>
-
-                  {/* Departamento */}
-                  <td>
-                    <span className="department-text">{u.department || '—'}</span>
-                  </td>
-
-                  {/* Nivel / Capacidad (Agentes) */}
-                  <td>
-                    {isAgent(u) ? (
-                      <div className="agent-tier-box">
-                        <span
-                          className={`tier-tag tier-${u.support_agent?.tier_level || 1}`}
-                        >
-                          Tier {u.support_agent?.tier_level || 1} (
-                          {tierLabel(u.support_agent?.tier_level)})
-                        </span>
-                        <span className="capacity-hint">
-                          {u.assigned_tickets_count || 0} activos / máx{' '}
-                          {u.support_agent?.max_active_tickets || 10}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-muted text-xs">No aplica</span>
-                    )}
-                  </td>
-
-                  {/* Prioridades Asignadas */}
-                  <td>
-                    {isAgent(u) ? (
-                      <div className="priorities-wrapper">
-                        {u.support_agent?.allowed_priorities?.length ? (
-                          u.support_agent.allowed_priorities.map((p) => (
-                            <span key={p} className={`prio-tag prio-${p}`}>
-                              {priorityLabel(p)}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-muted text-xs">
-                            Todas las prioridades
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-muted text-xs">—</span>
-                    )}
-                  </td>
-
-                  {/* Categorías Designadas */}
-                  <td>
-                    {isAgent(u) ? (
-                      <div className="categories-wrapper">
-                        {u.support_agent?.categories?.length ? (
-                          u.support_agent.categories.map((cat) => (
-                            <span
-                              key={cat.id}
-                              className="category-tag"
-                              title={cat.description}
-                            >
-                              {cat.name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-emerald font-semibold text-xs">
-                            ★ Todas las categorías (General)
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-muted text-xs">—</span>
-                    )}
-                  </td>
-
-                  {/* Estado Agente */}
-                  <td>
-                    {isAgent(u) ? (
-                      <div className="status-toggle-wrapper">
-                        <button
-                          className={`status-btn ${
-                            u.support_agent?.is_active ? 'active' : 'paused'
-                          }`}
-                          title={
-                            u.support_agent?.is_active
-                              ? 'Clic para pausar disponibilidad'
-                              : 'Clic para activar disponibilidad'
-                          }
-                          onClick={() => handleToggleActive(u)}
-                        >
-                          <span className="status-circle"></span>
-                          <span>
-                            {u.support_agent?.is_active ? 'Activo' : 'En Pausa'}
-                          </span>
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-muted text-xs">—</span>
-                    )}
-                  </td>
-
-                  {/* Acciones */}
-                  <td className="text-right">
-                    <div className="actions-wrapper">
-                      <button
-                        className="action-btn edit-btn"
-                        title="Editar datos y configuración de roles"
-                        onClick={() => openEditModal(u)}
-                      >
-                        <IconEdit size={16} />
-                      </button>
-
-                      {u.id !== currentUser?.id && (
-                        <button
-                          className="action-btn delete-btn"
-                          title="Eliminar usuario"
-                          onClick={() => confirmDeleteUser(u)}
-                        >
-                          <IconTrash size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+          <div className="table-responsive">
+            <table className="users-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '280px' }}>Usuario</th>
+                  <th style={{ width: '200px' }}>Rol Institucional</th>
+                  <th style={{ width: '130px' }}>ID Moodle</th>
+                  <th style={{ width: '240px' }}>Prioridades & Categorías</th>
+                  <th style={{ width: '120px' }}>Disponibilidad</th>
+                  <th className="text-right" style={{ width: '110px' }}>Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {displayedUsers.map((u) => {
+                  const rolNombre = u.rol?.nombre || (u.role === 'admin' ? 'DIRECTOR' : u.role === 'support' ? 'TECNICO' : 'ESTUDIANTE')
+                  const isInterno = inInternalRole(rolNombre)
+                  const isActive = Boolean(u.activo ?? u.is_active ?? true)
+                  const isCurrent = currentUser?.id === u.id
+                  const initialLetter = (u.nombre || u.name || 'U').charAt(0).toUpperCase()
+
+                  return (
+                    <tr key={u.id} className={!isActive ? 'row-inactive' : ''}>
+                      {/* Usuario */}
+                      <td>
+                        <div className="user-profile-cell">
+                          <div className={`user-avatar avatar-${rolNombre.toLowerCase()}`}>
+                            {initialLetter}
+                          </div>
+                          <div className="user-text-info">
+                            <div className="user-name-line">
+                              <span className="user-fullname">
+                                {u.nombre && u.apellido
+                                  ? `${u.nombre} ${u.apellido}`
+                                  : u.name || u.nombre || 'Sin nombre'}
+                              </span>
+                              {isCurrent && (
+                                <span className="current-user-tag" title="Tu cuenta en sesión actual">
+                                  Tú
+                                </span>
+                              )}
+                            </div>
+                            <span className="user-email">{u.correo || u.email}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Rol & Frontera */}
+                      <td>
+                        <div className="role-frontera-cell">
+                          <span className={`role-badge role-${rolNombre.toLowerCase()}`}>
+                            {formatRole(rolNombre)}
+                          </span>
+                          <span className={`badge-sesion ${isInterno ? 'internal' : 'external'}`}>
+                            {isInterno ? (
+                              <>
+                                <IconKey size={12} />
+                                <span>Sesión Web (Consola)</span>
+                              </>
+                            ) : (
+                              <>
+                                <IconSchool size={12} />
+                                <span>Campus Moodle</span>
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* ID Moodle */}
+                      <td>
+                        {u.moodle_user_id ? (
+                          <span className="moodle-chip" title={`Usuario ID #${u.moodle_user_id} sincronizado con Moodle`}>
+                            <IconSchool size={13} />
+                            <span>mdl #{u.moodle_user_id}</span>
+                          </span>
+                        ) : (
+                          <span className="text-subtle text-xs">—</span>
+                        )}
+                      </td>
+
+                      {/* Competencias Técnicas (Prioridades & Categorías) */}
+                      <td>
+                        {isInterno ? (
+                          <div className="competencies-stack">
+                            {/* Prioridades */}
+                            <div className="priorities-row">
+                              {u.prioridades && u.prioridades.length > 0 ? (
+                                u.prioridades.map((p) => (
+                                  <span
+                                    key={p.id}
+                                    className={`prio-chip prio-${(p.codigo || '').toLowerCase()}`}
+                                    title={`SLA: ${p.sla_horas_resolucion ? `${p.sla_horas_resolucion}h` : 'N/D'}`}
+                                  >
+                                    {p.nombre || p.codigo}
+                                  </span>
+                                ))
+                              ) : u.support_agent?.allowed_priorities?.length ? (
+                                u.support_agent.allowed_priorities.map((p) => (
+                                  <span key={p} className={`prio-chip prio-${p}`}>
+                                    {priorityLabel(p)}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="prio-chip all">Todas las prioridades</span>
+                              )}
+                            </div>
+
+                            {/* Categorías */}
+                            <div className="categories-row">
+                              {u.categorias && u.categorias.length > 0 ? (
+                                <>
+                                  {u.categorias.slice(0, 2).map((c) => (
+                                    <span key={c.id} className="cat-chip" title={c.descripcion || ''}>
+                                      {c.nombre || c.name}
+                                    </span>
+                                  ))}
+                                  {u.categorias.length > 2 && (
+                                    <span
+                                      className="cat-chip-more"
+                                      title={u.categorias.slice(2).map((c) => c.nombre || c.name).join(', ')}
+                                    >
+                                      +{u.categorias.length - 2}
+                                    </span>
+                                  )}
+                                </>
+                              ) : u.support_agent?.categories?.length ? (
+                                <>
+                                  {u.support_agent.categories.slice(0, 2).map((c) => (
+                                    <span key={c.id} className="cat-chip">
+                                      {c.name || c.nombre}
+                                    </span>
+                                  ))}
+                                  {u.support_agent.categories.length > 2 && (
+                                    <span className="cat-chip-more">
+                                      +{u.support_agent.categories.length - 2}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="cat-chip-wildcard">Comodín (Todas las temáticas)</span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="client-competency-pill">
+                            <span className="client-badge">Usuario Solicitante</span>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Disponibilidad (Toggle Switch) */}
+                      <td>
+                        <button
+                          type="button"
+                          className={`switch-status-btn ${isActive ? 'active' : 'inactive'}`}
+                          onClick={() => handleToggleActive(u)}
+                          title={isActive ? 'Clic para desactivar acceso' : 'Clic para habilitar cuenta'}
+                        >
+                          {isActive ? (
+                            <>
+                              <IconToggleRight size={22} className="switch-icon text-emerald" />
+                              <span className="switch-text active">Activo</span>
+                            </>
+                          ) : (
+                            <>
+                              <IconToggleLeft size={22} className="switch-icon text-slate" />
+                              <span className="switch-text inactive">Inactivo</span>
+                            </>
+                          )}
+                        </button>
+                      </td>
+
+                      {/* Acciones */}
+                      <td className="text-right">
+                        <div className="action-buttons-group">
+                          <button
+                            type="button"
+                            className="btn-action edit"
+                            title="Editar usuario y competencias"
+                            onClick={() => openEditModal(u)}
+                          >
+                            <IconEdit size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-action delete"
+                            title={isCurrent ? 'No puedes eliminar tu propia cuenta' : 'Eliminar usuario'}
+                            disabled={isCurrent}
+                            onClick={() => confirmDeleteUser(u)}
+                          >
+                            <IconTrash size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Barra de Paginación */}
+        {pagination && pagination.total > 0 && (
+          <div className="pagination-footer">
+            <span className="pagination-info">
+              Mostrando página <b>{pagination.current_page}</b> de <b>{pagination.last_page}</b> (
+              <b>{pagination.total}</b> usuarios registrados)
+            </span>
+            <div className="pagination-controls">
+              <button
+                type="button"
+                className="btn-page"
+                disabled={pagination.current_page <= 1 || loading}
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              >
+                <IconChevronLeft size={16} />
+                <span>Anterior</span>
+              </button>
+              <button
+                type="button"
+                className="btn-page"
+                disabled={pagination.current_page >= pagination.last_page || loading}
+                onClick={() => setPage((prev) => prev + 1)}
+              >
+                <span>Siguiente</span>
+                <IconChevronRight size={16} />
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Paginación */}
-      {pagination && pagination.last_page > 1 && (
-        <div className="pagination-bar">
-          <button
-            className="page-btn"
-            disabled={pagination.current_page <= 1}
-            onClick={() => setPage(pagination.current_page - 1)}
-          >
-            ‹ Anterior
-          </button>
-
-          <span className="page-info">
-            Página <b>{pagination.current_page}</b> de <b>{pagination.last_page}</b>{' '}
-            ({pagination.total} usuarios)
-          </span>
-
-          <button
-            className="page-btn"
-            disabled={pagination.current_page >= pagination.last_page}
-            onClick={() => setPage(pagination.current_page + 1)}
-          >
-            Siguiente ›
-          </button>
-        </div>
-      )}
-
-      {/* Modal Formulario Usuario & Roles */}
+      {/* Modal Dialog Formulario Profesional */}
       {modalVisible && (
-        <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-          <div className="modal-card">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal()
+          }}
+        >
+          <div className="modal-container">
+            {/* Modal Header */}
             <div className="modal-header">
-              <div className="modal-title-group">
-                <h2 className="modal-title">
-                  {isEditing
-                    ? 'Editar Usuario y Roles de Agente'
-                    : 'Nuevo Usuario del Sistema'}
-                </h2>
-                <span className="modal-subtitle">
-                  {isEditing
-                    ? 'Modifica la información y especialización asignada a este usuario.'
-                    : 'Crea un nuevo usuario con roles y configuración de atención.'}
-                </span>
+              <div className="modal-header-icon-wrap">
+                <IconUser size={22} className="text-blue" />
               </div>
-              <button className="modal-close-btn" onClick={closeModal}>
+              <div className="modal-header-text">
+                <h2 className="modal-title">
+                  {isEditing ? `Editar Usuario #${formData.id}` : 'Registrar Nuevo Usuario'}
+                </h2>
+                <p className="modal-subtitle">
+                  {isEditing
+                    ? 'Actualiza los datos personales, rol institucional y competencias de soporte técnico.'
+                    : 'Completa la información institucional y designa las competencias correspondientes.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={closeModal}
+                aria-label="Cerrar modal"
+              >
                 <IconX size={20} />
               </button>
             </div>
 
-            <form className="modal-form" onSubmit={submitForm}>
-              {/* Pestañas internas */}
-              <div className="modal-tabs">
+            <form onSubmit={submitForm} className="modal-form-content">
+              {/* Pestañas de Navegación del Modal */}
+              <div className="modal-nav-tabs">
                 <button
                   type="button"
-                  className={`tab-btn ${activeTab === 'account' ? 'active' : ''}`}
+                  className={`modal-tab ${activeTab === 'account' ? 'active' : ''}`}
                   onClick={() => setActiveTab('account')}
                 >
                   <IconUser size={16} />
-                  <span>1. Cuenta y Perfil</span>
+                  <span>1. Cuenta & Rol Institucional</span>
                 </button>
 
                 <button
                   type="button"
-                  className={`tab-btn ${activeTab === 'agent' ? 'active' : ''}`}
-                  disabled={!isAgentRoleSelected}
-                  onClick={() => setActiveTab('agent')}
+                  className={`modal-tab ${activeTab === 'agent' ? 'active' : ''} ${
+                    !inInternalRole(formData.role) ? 'tab-disabled' : ''
+                  }`}
+                  onClick={() => {
+                    if (inInternalRole(formData.role)) {
+                      setActiveTab('agent')
+                    }
+                  }}
+                  title={
+                    !inInternalRole(formData.role)
+                      ? 'Las competencias técnicas solo aplican a Personal de Soporte Técnico y Dirección.'
+                      : ''
+                  }
                 >
                   <IconHeadset size={16} />
-                  <span>2. Especialización y Roles de Agente</span>
-                  {!isAgentRoleSelected && (
-                    <span className="tab-badge-disabled">Solo Soporte/Admin</span>
+                  <span>2. Competencias Técnicas & SLAs</span>
+                  {inInternalRole(formData.role) ? (
+                    <span className="tab-pill-badge active">Soporte</span>
+                  ) : (
+                    <span className="tab-pill-badge muted">Solo Técnicos</span>
                   )}
                 </button>
               </div>
 
-              {/* TAB 1: Cuenta y Perfil */}
-              {activeTab === 'account' && (
-                <div className="tab-pane">
-                  <div className="form-row">
-                    <div className="form-group flex-1">
-                      <label className="form-label">Nombre completo *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Ej. Ing. Roberto Mendoza"
-                        className="input-field"
-                        value={formData.name}
-                        onChange={(e) =>
-                          setFormData({ ...formData, name: e.target.value })
-                        }
-                      />
-                    </div>
-
-                    <div className="form-group flex-1">
-                      <label className="form-label">Correo electrónico *</label>
-                      <input
-                        type="email"
-                        required
-                        placeholder="usuario@helpdesk.com"
-                        className="input-field"
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
-                      />
-                    </div>
+              {/* Cuerpo del Formulario */}
+              <div className="modal-scrollable-body">
+                {formError && (
+                  <div className="form-error-banner">
+                    <IconAlertCircle size={20} />
+                    <span>{formError}</span>
                   </div>
+                )}
 
-                  <div className="form-row">
-                    <div className="form-group flex-1">
-                      <label className="form-label">
-                        Contraseña{' '}
-                        {isEditing
-                          ? '(Opcional, dejar vacía para conservar)'
-                          : '*'}
-                      </label>
-                      <input
-                        type="password"
-                        required={!isEditing}
-                        placeholder="Mínimo 6 caracteres"
-                        className="input-field"
-                        value={formData.password}
-                        onChange={(e) =>
-                          setFormData({ ...formData, password: e.target.value })
-                        }
-                      />
-                    </div>
-
-                    <div className="form-group flex-1">
-                      <label className="form-label">Rol en la plataforma *</label>
-                      <select
-                        required
-                        className="select-field"
-                        value={formData.role}
-                        onChange={(e) =>
-                          setFormData({ ...formData, role: e.target.value })
-                        }
-                      >
-                        <option value="support">Soporte Técnico (Agente)</option>
-                        <option value="admin">Administrador del Sistema</option>
-                        <option value="teacher">Docente</option>
-                        <option value="estudiante">Estudiante</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Departamento o Facultad</label>
-                    <input
-                      type="text"
-                      placeholder="Ej. Soporte Tecnológico, Facultad de Ingeniería, etc."
-                      className="input-field"
-                      value={formData.department}
-                      onChange={(e) =>
-                        setFormData({ ...formData, department: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: Roles de Agente y Atención de Tickets */}
-              {activeTab === 'agent' && (
-                <div className="tab-pane">
-                  <div className="agent-info-banner">
-                    <IconInfoCircle size={18} className="text-blue" />
-                    <span>
-                      Esta configuración determina la lógica de{' '}
-                      <strong>asignación automática</strong> cuando ingresan tickets
-                      desde Moodle o el Widget de soporte.
-                    </span>
-                  </div>
-
-                  <div className="form-row mt-3">
-                    {/* Nivel / Tier */}
-                    <div className="form-group flex-1">
-                      <label className="form-label">
-                        Nivel de Atención (Tier Escalado)
-                      </label>
-                      <select
-                        className="select-field"
-                        value={formData.tier_level}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            tier_level: Number(e.target.value),
-                          })
-                        }
-                      >
-                        <option value={1}>
-                          Nivel 1 — Soporte Básico / Respuestas Frecuentes
-                        </option>
-                        <option value={2}>
-                          Nivel 2 — Técnico Intermedio / Diagnóstico
-                        </option>
-                        <option value={3}>
-                          Nivel 3 — Especialista / Administrador Crítico
-                        </option>
-                      </select>
-                    </div>
-
-                    {/* Límite de carga */}
-                    <div className="form-group flex-1">
-                      <label className="form-label">
-                        Capacidad máxima de tickets concurrentes
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="50"
-                        className="input-field"
-                        value={formData.max_active_tickets}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            max_active_tickets: Number(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  {/* Nivel de Prioridad de Tickets que puede atender */}
-                  <div className="form-group mt-3">
-                    <label className="form-label">
-                      Prioridades de ticket que puede atender:
-                      <span className="hint-text">
-                        (Si no marcas ninguna, atenderá cualquier prioridad)
-                      </span>
-                    </label>
-
-                    <div className="checkbox-pills-grid">
-                      <label className="checkbox-pill">
+                {/* TAB 1: DATOS DE CUENTA */}
+                {activeTab === 'account' && (
+                  <div className="tab-section">
+                    <div className="form-grid-2">
+                      <div className="form-field">
+                        <label className="field-label">
+                          Nombre(s) <span className="required-star">*</span>
+                        </label>
                         <input
-                          type="checkbox"
-                          checked={formData.allowed_priorities.includes('low')}
-                          onChange={() => handlePriorityToggle('low')}
-                        />
-                        <span className="pill-badge prio-low">Baja (Low)</span>
-                      </label>
-
-                      <label className="checkbox-pill">
-                        <input
-                          type="checkbox"
-                          checked={formData.allowed_priorities.includes('medium')}
-                          onChange={() => handlePriorityToggle('medium')}
-                        />
-                        <span className="pill-badge prio-medium">Media (Medium)</span>
-                      </label>
-
-                      <label className="checkbox-pill">
-                        <input
-                          type="checkbox"
-                          checked={formData.allowed_priorities.includes('high')}
-                          onChange={() => handlePriorityToggle('high')}
-                        />
-                        <span className="pill-badge prio-high">Alta (High)</span>
-                      </label>
-
-                      <label className="checkbox-pill">
-                        <input
-                          type="checkbox"
-                          checked={formData.allowed_priorities.includes('critical')}
-                          onChange={() => handlePriorityToggle('critical')}
-                        />
-                        <span className="pill-badge prio-critical">
-                          Crítica (Critical)
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Categorías de Ticket que puede atender */}
-                  <div className="form-group mt-3">
-                    <div className="categories-header-row">
-                      <label className="form-label">
-                        Categorías de ticket designadas:
-                        <span className="hint-text">
-                          (Si no marcas ninguna, atenderá todas como agente comodín)
-                        </span>
-                      </label>
-                      <div className="quick-select-btns">
-                        <button
-                          type="button"
-                          className="btn-link-xs"
-                          onClick={selectAllCategories}
-                        >
-                          Marcar todas
-                        </button>
-                        <span className="divider-xs">·</span>
-                        <button
-                          type="button"
-                          className="btn-link-xs"
-                          onClick={() =>
-                            setFormData((prev) => ({ ...prev, category_ids: [] }))
+                          type="text"
+                          required
+                          placeholder="Ej. Carlos Fernando"
+                          className="field-input"
+                          value={formData.nombre}
+                          onChange={(e) =>
+                            setFormData({ ...formData, nombre: e.target.value })
                           }
-                        >
-                          Desmarcar
-                        </button>
+                        />
+                      </div>
+
+                      <div className="form-field">
+                        <label className="field-label">Apellidos</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Morales Vega"
+                          className="field-input"
+                          value={formData.apellido}
+                          onChange={(e) =>
+                            setFormData({ ...formData, apellido: e.target.value })
+                          }
+                        />
                       </div>
                     </div>
 
-                    <div className="categories-grid-selection">
-                      {categories.map((cat) => (
+                    <div className="form-grid-2 mt-3">
+                      <div className="form-field">
+                        <label className="field-label">
+                          Correo Institucional <span className="required-star">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="usuario@campus.edu"
+                          className="field-input"
+                          value={formData.correo}
+                          onChange={(e) =>
+                            setFormData({ ...formData, correo: e.target.value })
+                          }
+                        />
+                      </div>
+
+                      <div className="form-field">
+                        <label className="field-label">
+                          Contraseña {isEditing ? <span className="optional-text">(Opcional)</span> : <span className="required-star">*</span>}
+                        </label>
+                        <div className="password-input-wrap">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            required={!isEditing && inInternalRole(formData.role)}
+                            placeholder={isEditing ? 'Sin cambios (dejar vacío)' : 'Mínimo 6 caracteres'}
+                            className="field-input pr-10"
+                            value={formData.password}
+                            onChange={(e) =>
+                              setFormData({ ...formData, password: e.target.value })
+                            }
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle-btn"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label="Ver u ocultar contraseña"
+                          >
+                            {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-grid-2 mt-3">
+                      <div className="form-field">
+                        <label className="field-label">
+                          Rol Institucional <span className="required-star">*</span>
+                        </label>
+                        <select
+                          required
+                          className="field-select"
+                          value={formData.role}
+                          onChange={handleRoleChange}
+                        >
+                          <option value="TECNICO">TECNICO — Soporte Técnico & Resolución (Interno)</option>
+                          <option value="DIRECTOR">DIRECTOR — Dirección & Administración General (Interno)</option>
+                          <option value="DOCENTE">DOCENTE — Profesor / Académico Moodle (Externo)</option>
+                          <option value="ESTUDIANTE">ESTUDIANTE — Alumno Matriculado (Externo)</option>
+                          <option value="VISITANTE">VISITANTE — Visitante Externo / Comunidad</option>
+                        </select>
+                        <span className="field-hint">
+                          Define el nivel de acceso en la plataforma y el flujo de asignación.
+                        </span>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="field-label">
+                          ID de Usuario Moodle <span className="optional-text">(mdl_user.id)</span>
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="Ej. 1042 (Vacío si no está en Moodle)"
+                          className="field-input"
+                          value={formData.moodle_user_id}
+                          onChange={(e) =>
+                            setFormData({ ...formData, moodle_user_id: e.target.value })
+                          }
+                        />
+                        <span className="field-hint">
+                          Enlaza la cuenta con la base de datos de usuarios de la plataforma académica.
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Cards de Configuración de Acceso y Sesión */}
+                    <div className="access-cards-group mt-4">
+                      {/* Card Sesión Web */}
+                      <label className={`access-config-card ${formData.sesion ? 'checked' : ''}`}>
+                        <div className="access-card-left">
+                          <input
+                            type="checkbox"
+                            checked={formData.sesion}
+                            onChange={(e) =>
+                              setFormData({ ...formData, sesion: e.target.checked })
+                            }
+                          />
+                        </div>
+                        <div className="access-card-info">
+                          <div className="access-card-title">
+                            <IconKey size={16} className="text-blue" />
+                            <span>Sesión Web Habilitada (Acceso a Consola)</span>
+                          </div>
+                          <p className="access-card-desc">
+                            Permite autenticarse en este portal web.
+                          </p>
+                        </div>
+                      </label>
+
+                      {/* Card Cuenta Activa */}
+                      <label className={`access-config-card ${formData.is_active ? 'checked' : ''}`}>
+                        <div className="access-card-left">
+                          <input
+                            type="checkbox"
+                            checked={formData.is_active}
+                            onChange={(e) =>
+                              setFormData({ ...formData, is_active: e.target.checked })
+                            }
+                          />
+                        </div>
+                        <div className="access-card-info">
+                          <div className="access-card-title">
+                            <IconCheck size={16} className="text-emerald" />
+                            <span>Cuenta Activa en el Sistema</span>
+                          </div>
+                          <p className="access-card-desc">
+                            Si se desmarca, el usuario no podrá iniciar sesión ni recibir tickets automáticos.
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: COMPETENCIAS TÉCNICAS */}
+                {activeTab === 'agent' && (
+                  <div className="tab-section">
+
+                    {/* Niveles de Prioridad */}
+                    <div className="form-group-block mt-4">
+                      <div className="block-header">
+                        <label className="block-title">
+                          <IconClock size={16} className="text-amber" />
+                          <span>Niveles de Prioridad SLA que puede atender:</span>
+                        </label>
+                        <span className="block-subtitle">
+                          Marca los niveles de impacto y tiempo de respuesta autorizados.
+                        </span>
+                      </div>
+
+                      <div className="priorities-picker-grid">
                         <label
-                          key={cat.id}
-                          className={`category-check-item ${
-                            formData.category_ids.includes(cat.id)
-                              ? 'selected'
-                              : ''
+                          className={`priority-card prio-low ${
+                            formData.allowed_priorities.includes('low') ? 'selected' : ''
                           }`}
                         >
                           <input
                             type="checkbox"
-                            checked={formData.category_ids.includes(cat.id)}
-                            onChange={() => handleCategoryToggle(cat.id)}
+                            checked={formData.allowed_priorities.includes('low')}
+                            onChange={() => handlePriorityToggle('low')}
                           />
-                          <div className="cat-check-text">
-                            <span className="cat-name">{cat.name}</span>
-                            <span className="cat-desc">{cat.description}</span>
+                          <div className="priority-card-inner">
+                            <span className="priority-card-name">Baja</span>
+                            <span className="priority-card-sla">SLA: 72 horas</span>
                           </div>
                         </label>
-                      ))}
+
+                        <label
+                          className={`priority-card prio-medium ${
+                            formData.allowed_priorities.includes('medium') ? 'selected' : ''
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.allowed_priorities.includes('medium')}
+                            onChange={() => handlePriorityToggle('medium')}
+                          />
+                          <div className="priority-card-inner">
+                            <span className="priority-card-name">Media</span>
+                            <span className="priority-card-sla">SLA: 48 horas</span>
+                          </div>
+                        </label>
+
+                        <label
+                          className={`priority-card prio-high ${
+                            formData.allowed_priorities.includes('high') ? 'selected' : ''
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.allowed_priorities.includes('high')}
+                            onChange={() => handlePriorityToggle('high')}
+                          />
+                          <div className="priority-card-inner">
+                            <span className="priority-card-name">Alta</span>
+                            <span className="priority-card-sla">SLA: 24 horas</span>
+                          </div>
+                        </label>
+
+                        <label
+                          className={`priority-card prio-critical ${
+                            formData.allowed_priorities.includes('critical') ? 'selected' : ''
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.allowed_priorities.includes('critical')}
+                            onChange={() => handlePriorityToggle('critical')}
+                          />
+                          <div className="priority-card-inner">
+                            <span className="priority-card-name">Crítica</span>
+                            <span className="priority-card-sla">SLA: 4 horas</span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Categorías Asignadas */}
+                    <div className="form-group-block mt-4">
+                      <div className="categories-header-toolbar">
+                        <div>
+                          <label className="block-title">
+                            <IconFolders size={16} className="text-blue" />
+                            <span>Categorías Temáticas Asignadas:</span>
+                          </label>
+                          <span className="block-subtitle">
+                            {formData.category_ids.length === 0
+                              ? 'Técnico Comodín: Al no tener categorías específicas, podrá atender cualquier temática.'
+                              : `${formData.category_ids.length} categoría(s) especializada(s) seleccionada(s).`}
+                          </span>
+                        </div>
+
+                        <div className="quick-action-links">
+                          <button
+                            type="button"
+                            className="btn-link"
+                            onClick={selectAllCategories}
+                          >
+                            Marcar todas
+                          </button>
+                          <span className="link-divider">·</span>
+                          <button
+                            type="button"
+                            className="btn-link"
+                            onClick={() =>
+                              setFormData((prev) => ({ ...prev, category_ids: [] }))
+                            }
+                          >
+                            Limpiar
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Buscador de categorías en el modal */}
+                      {categories.length > 4 && (
+                        <div className="category-search-bar mt-2 mb-2">
+                          <IconSearch size={15} />
+                          <input
+                            type="text"
+                            placeholder="Buscar temática en el catálogo..."
+                            value={modalCatSearch}
+                            onChange={(e) => setModalCatSearch(e.target.value)}
+                          />
+                        </div>
+                      )}
+
+                      <div className="categories-selection-container">
+                        {categories.length === 0 ? (
+                          <div className="empty-categories-note">
+                            <IconFolders size={24} className="text-muted" />
+                            <span>No hay categorías configuradas en el catálogo maestro.</span>
+                          </div>
+                        ) : (
+                          <div className="categories-grid-cards">
+                            {filteredModalCategories.map((cat) => {
+                              const isChecked = formData.category_ids.includes(cat.id)
+                              return (
+                                <label
+                                  key={cat.id}
+                                  className={`category-item-card ${isChecked ? 'selected' : ''} ${
+                                    cat.activo === false ? 'cat-inactive' : ''
+                                  }`}
+                                >
+                                  <div className="cat-card-checkbox">
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => handleCategoryToggle(cat.id)}
+                                    />
+                                  </div>
+                                  <div className="cat-card-content">
+                                    <div className="cat-card-header">
+                                      <span className="cat-title">{cat.nombre || cat.name}</span>
+                                      {cat.activo === false && (
+                                        <span className="cat-inactive-tag">En pausa</span>
+                                      )}
+                                    </div>
+                                    <p className="cat-description">
+                                      {cat.descripcion || cat.description || 'Sin descripción detallada'}
+                                    </p>
+                                  </div>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
+                )}
+              </div>
 
-                  {/* Disponibilidad para Asignación */}
-                  <div className="form-group mt-3">
-                    <label className="toggle-availability-label">
-                      <input
-                        type="checkbox"
-                        checked={formData.is_active}
-                        onChange={(e) =>
-                          setFormData({ ...formData, is_active: e.target.checked })
-                        }
-                      />
-                      <span className="toggle-label-text">
-                        <strong>Agente Activo / Disponible para Asignación</strong>
-                        <small>
-                          Si se desmarca, el agente no recibirá nuevos tickets automáticos.
-                        </small>
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {/* Mensaje de Error en el Formulario */}
-              {formError && (
-                <div className="form-error-alert mt-3">
-                  <IconAlertCircle size={18} />
-                  <span>{formError}</span>
-                </div>
-              )}
-
-              {/* Footer Modal */}
+              {/* Modal Footer */}
               <div className="modal-footer">
-                <button
+                <Button
                   type="button"
-                  className="btn-secondary"
-                  onClick={closeModal}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary"
+                  label="Cancelar"
+                  severity="secondary"
+                  outlined
                   disabled={formSubmitting}
-                >
-                  {formSubmitting
-                    ? 'Guardando...'
-                    : isEditing
-                    ? 'Actualizar Usuario'
-                    : 'Crear Usuario'}
-                </button>
+                  onClick={closeModal}
+                />
+                <Button
+                  type="submit"
+                  label={
+                    formSubmitting
+                      ? 'Guardando...'
+                      : isEditing
+                      ? 'Guardar Cambios'
+                      : 'Crear Usuario'
+                  }
+                  severity="primary"
+                  loading={formSubmitting}
+                  icon={<IconCheck size={16} />}
+                />
               </div>
             </form>
           </div>
@@ -1008,4 +1347,3 @@ export default function UsersManagementView() {
     </div>
   )
 }
-

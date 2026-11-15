@@ -1,18 +1,17 @@
 import React, { useState, useMemo } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
-  IconLayoutDashboard,
-  IconTicket,
-  IconRobot,
-  IconChartBar,
   IconLogout,
   IconMenu2,
   IconX,
   IconHeadset,
   IconChevronRight,
-  IconUsers,
+  IconShieldLock,
+  IconLifebuoy,
 } from '@tabler/icons-react'
 import { useAuthStore } from '../stores/authStore.js'
+import { getNavigationForUser, getRouteContext } from '../config/navigation.js'
+import { getRoleMeta, isAdmin } from '../utils/permissions.js'
 import './AppLayout.css'
 
 export default function AppLayout() {
@@ -23,26 +22,28 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const isAdmin = user?.role === 'admin'
+  // Información visual y metadatos del rol del usuario logueado
+  const roleMeta = useMemo(() => getRoleMeta(user), [user])
+  const userIsAdmin = useMemo(() => isAdmin(user), [user])
 
+  // Obtener estructura de navegación dinámica basada en permisos
+  const navigationSections = useMemo(() => {
+    return getNavigationForUser(user)
+  }, [user])
+
+  // Obtener contexto de la página activa para el Topbar y Breadcrumbs
+  const routeContext = useMemo(() => {
+    return getRouteContext(location.pathname)
+  }, [location.pathname])
+
+  // Iniciales del usuario para el avatar
   const userInitials = useMemo(() => {
-    const name = user?.name || ''
+    const name = user?.name || user?.nombre || ''
     if (!name) return 'U'
     const parts = name.trim().split(' ')
     if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
     return name.slice(0, 2).toUpperCase()
-  }, [user?.name])
-
-  const currentRouteTitle = useMemo(() => {
-    const path = location.pathname
-    if (path.startsWith('/dashboard')) return 'Dashboard General'
-    if (path.startsWith('/tickets/')) return 'Detalle del Ticket'
-    if (path.startsWith('/tickets')) return 'Gestión de Tickets'
-    if (path.startsWith('/bot-history')) return 'Historial del Bot'
-    if (path.startsWith('/reports')) return 'Métricas y Reportes'
-    if (path.startsWith('/users')) return 'Gestión de Usuarios y Roles de Agente'
-    return 'Inicio'
-  }, [location.pathname])
+  }, [user?.name, user?.nombre])
 
   const handleLogout = async () => {
     await logoutUser()
@@ -58,7 +59,7 @@ export default function AppLayout() {
         <div className="sidebar-backdrop" onClick={closeMobileMenu} />
       )}
 
-      {/* Sidebar lateral */}
+      {/* Sidebar lateral dinámico */}
       <aside className={`sidebar ${mobileMenuOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-header">
           <div className="brand">
@@ -66,8 +67,8 @@ export default function AppLayout() {
               <IconHeadset size={24} strokeWidth={2} />
             </div>
             <div className="brand-text">
-              <span className="brand-title">Helpdesk AI</span>
-              <span className="brand-subtitle">Campus Virtual</span>
+              <span className="brand-title">Mesa Ayuda</span>
+              <span className="brand-subtitle">UAGRM</span>
             </div>
           </div>
           <button className="mobile-close-btn" onClick={closeMobileMenu} aria-label="Cerrar menú">
@@ -75,94 +76,66 @@ export default function AppLayout() {
           </button>
         </div>
 
-        <div className="nav-section-label">NAVEGACIÓN PRINCIPAL</div>
-
-        <nav className="sidebar-nav">
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) => `nav-link ${isActive ? 'router-link-active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <div className="nav-link-content">
-              <IconLayoutDashboard size={20} strokeWidth={1.8} className="nav-icon" />
-              <span>Dashboard</span>
-            </div>
-            <IconChevronRight size={16} className="nav-arrow" />
-          </NavLink>
-
-          <NavLink
-            to="/tickets"
-            className={({ isActive }) => `nav-link ${isActive ? 'router-link-active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <div className="nav-link-content">
-              <IconTicket size={20} strokeWidth={1.8} className="nav-icon" />
-              <span>Tickets</span>
-            </div>
-            <IconChevronRight size={16} className="nav-arrow" />
-          </NavLink>
-
-          <NavLink
-            to="/bot-history"
-            className={({ isActive }) => `nav-link ${isActive ? 'router-link-active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <div className="nav-link-content">
-              <IconRobot size={20} strokeWidth={1.8} className="nav-icon" />
-              <span>Historial Bot</span>
-            </div>
-            <IconChevronRight size={16} className="nav-arrow" />
-          </NavLink>
-
-          <NavLink
-            to="/reports"
-            className={({ isActive }) => `nav-link ${isActive ? 'router-link-active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <div className="nav-link-content">
-              <IconChartBar size={20} strokeWidth={1.8} className="nav-icon" />
-              <span>Reportes & KPIs</span>
-            </div>
-            <IconChevronRight size={16} className="nav-arrow" />
-          </NavLink>
-
-          {/* Gestión de Usuarios y Roles (Exclusivo Administrador) */}
-          {isAdmin && (
-            <NavLink
-              to="/users"
-              className={({ isActive }) => `nav-link ${isActive ? 'router-link-active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              <div className="nav-link-content">
-                <IconUsers size={20} strokeWidth={1.8} className="nav-icon" />
-                <span>Usuarios & Roles</span>
-              </div>
-              <IconChevronRight size={16} className="nav-arrow" />
-            </NavLink>
-          )}
-        </nav>
-
-        {/* Estado del sistema */}
-        <div className="system-status-box">
-          <div className="status-indicator">
-            <span className="status-dot"></span>
-            <span className="status-text">Moodle Sync & Bot Activos</span>
+        {/* Indicador de Modo de Operación / Rol */}
+        <div className="sidebar-role-indicator">
+          <div className={`role-indicator-pill ${roleMeta.badgeClass}`}>
+            {userIsAdmin ? (
+              <IconShieldLock size={14} strokeWidth={2.2} />
+            ) : (
+              <IconLifebuoy size={14} strokeWidth={2.2} />
+            )}
+            <span>{roleMeta.label.toUpperCase()}</span>
           </div>
-          <span className="status-hint">v2.0 · En línea</span>
         </div>
+
+        {/* Navegación dinámica generada por secciones según permisos */}
+        <nav className="sidebar-nav">
+          {navigationSections.map((section) => (
+            <div key={section.id} className="nav-group">
+              <div className="nav-section-label">{section.sectionTitle}</div>
+              <div className="nav-group-items">
+                {section.items.map((item) => {
+                  const ItemIcon = item.icon
+                  return (
+                    <NavLink
+                      key={item.id}
+                      to={item.to}
+                      className={({ isActive }) =>
+                        `nav-link ${isActive ? 'router-link-active' : ''}`
+                      }
+                      onClick={closeMobileMenu}
+                      title={item.description}
+                    >
+                      <div className="nav-link-content">
+                        <ItemIcon size={20} strokeWidth={1.8} className="nav-icon" />
+                        <span>{item.title}</span>
+                      </div>
+                      <div className="nav-link-right">
+                        {item.badge && (
+                          <span className="nav-badge-pill">{item.badge}</span>
+                        )}
+                        <IconChevronRight size={16} className="nav-arrow" />
+                      </div>
+                    </NavLink>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
 
         {/* Footer Usuario */}
         <div className="sidebar-footer">
           <div className="user-profile">
-            <div className="user-avatar">
+            <div className={`user-avatar ${roleMeta.badgeClass}`}>
               {userInitials}
             </div>
             <div className="user-details">
-              <span className="user-name" title={user?.name || 'Usuario'}>
-                {user?.name || 'Usuario'}
+              <span className="user-name" title={user?.name || user?.nombre || 'Usuario'}>
+                {user?.name || user?.nombre || 'Usuario'}
               </span>
-              <span className="user-role-badge">
-                {user?.role || 'Staff'}
+              <span className="user-role-badge" title={roleMeta.description}>
+                {roleMeta.label}
               </span>
             </div>
           </div>
@@ -171,6 +144,7 @@ export default function AppLayout() {
             className="btn-logout"
             title="Cerrar sesión"
             onClick={handleLogout}
+            aria-label="Cerrar sesión"
           >
             <IconLogout size={18} strokeWidth={1.8} />
             <span>Salir</span>
@@ -178,7 +152,7 @@ export default function AppLayout() {
         </div>
       </aside>
 
-      {/* Área Principal */}
+      {/* Área Principal de Contenido */}
       <div className="main-wrapper">
         {/* Barra superior Header */}
         <header className="topbar">
@@ -186,26 +160,22 @@ export default function AppLayout() {
             <button
               className="mobile-toggle-btn"
               onClick={() => setMobileMenuOpen(true)}
-              aria-label="Abrir menú"
+              aria-label="Abrir menú de navegación"
             >
               <IconMenu2 size={22} />
             </button>
             <div className="page-context">
-              <span className="context-breadcrumb">Plataforma Helpdesk</span>
+              <span className="context-breadcrumb">{routeContext.category}</span>
               <span className="context-divider">/</span>
-              <span className="context-current">{currentRouteTitle}</span>
+              <span className="context-current">{routeContext.title}</span>
             </div>
           </div>
 
           <div className="topbar-right">
-            <div className="live-badge">
-              <span className="live-pulse"></span>
-              <span>En vivo</span>
-            </div>
 
             <div className="topbar-user">
               <span className="topbar-greeting">
-                Hola, <b>{user?.name?.split(' ')[0] || 'Usuario'}</b>
+                Hola, <b>{(user?.name || user?.nombre || 'Usuario').split(' ')[0]}</b>
               </span>
             </div>
           </div>
@@ -219,4 +189,3 @@ export default function AppLayout() {
     </div>
   )
 }
-

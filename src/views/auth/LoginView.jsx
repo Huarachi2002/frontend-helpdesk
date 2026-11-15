@@ -11,6 +11,7 @@ import {
   IconAlertCircle,
 } from '@tabler/icons-react'
 import { useAuthStore } from '../../stores/authStore.js'
+import { getDefaultRouteForUser } from '../../utils/permissions.js'
 import './LoginView.css'
 
 export default function LoginView() {
@@ -33,8 +34,9 @@ export default function LoginView() {
     setError(null)
 
     try {
-      await loginUser(form)
-      navigate('/dashboard')
+      const data = await loginUser(form)
+      const targetRoute = getDefaultRouteForUser(data?.user)
+      navigate(targetRoute, { replace: true })
     } catch (err) {
       setError(
         err.response?.data?.message ||

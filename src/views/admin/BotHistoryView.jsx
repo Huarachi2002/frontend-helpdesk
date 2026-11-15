@@ -109,10 +109,6 @@ export default function BotHistoryView() {
         <div className="header-titles">
           <div className="title-with-badge">
             <h1 className="page-title">Historial de Interacciones del Bot</h1>
-            <span className="bot-badge">
-              <IconSparkles size={14} />
-              <span>NLP & FAQ Assistant</span>
-            </span>
           </div>
           <p className="page-subtitle">
             Supervisa las conversaciones, precisión de intenciones y resoluciones autónomas del asistente virtual
@@ -351,14 +347,6 @@ export default function BotHistoryView() {
         modal
         header="Detalle de Interacción con el Asistente"
         style={{ width: '640px', maxWidth: '95vw' }}
-        footer={
-          <Button
-            label="Cerrar"
-            severity="secondary"
-            size="small"
-            onClick={() => setDetailVisible(false)}
-          />
-        }
       >
         {selectedItem && (
           <div className="bot-detail-content">

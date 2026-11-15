@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { getTickets, getTicket, updateStatus, reassignTicket } from '../api/tickets.js'
+import { getTickets, getTicket, createTicket, updateStatus, reassignTicket } from '../api/tickets.js'
 
 export const useTicketsStore = create((set, get) => ({
   tickets: [],
@@ -15,10 +15,10 @@ export const useTicketsStore = create((set, get) => ({
       set({
         tickets: data.data || [],
         pagination: {
-          current_page: data.meta?.current_page,
-          last_page: data.meta?.last_page,
-          per_page: data.meta?.per_page,
-          total: data.meta?.total,
+          current_page: data.meta?.current_page ?? data.current_page,
+          last_page: data.meta?.last_page ?? data.last_page,
+          per_page: data.meta?.per_page ?? data.per_page,
+          total: data.meta?.total ?? data.total,
         },
         loading: false,
       })
@@ -28,6 +28,18 @@ export const useTicketsStore = create((set, get) => ({
         loading: false,
       })
     }
+  },
+
+  createNewTicket: async (ticketData) => {
+    const { data } = await createTicket(ticketData)
+    const created = data.data ?? data
+    set((state) => ({
+      tickets: [created, ...state.tickets],
+      pagination: state.pagination
+        ? { ...state.pagination, total: (state.pagination.total || 0) + 1 }
+        : null,
+    }))
+    return data
   },
 
   fetchTicket: async (id) => {
@@ -64,9 +76,16 @@ export const useTicketsStore = create((set, get) => ({
   },
 
   reassign: async (id, assigned_to, comments = '') => {
-    const { data } = await reassignTicket(id, { assigned_to, comments })
-    set({ ticket: data.data })
-    return data
+    try {
+      const { data } = await reassignTicket(id, { assigned_to, comments })
+      set({ ticket: data.data })
+      return data
+    } catch (e) {
+      const message = e.response?.data?.message || 'Error al reasignar el ticket'
+      const enriched = new Error(message)
+      enriched.errorCode = e.response?.data?.error
+      throw enriched
+    }
   },
 }))
 

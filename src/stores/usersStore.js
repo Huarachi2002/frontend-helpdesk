@@ -41,7 +41,7 @@ export const useUsersStore = create((set, get) => ({
 
   fetchCategories: async () => {
     try {
-      const { data } = await getCategories()
+      const { data } = await getCategories({ all: true })
       set({ categories: data.data ?? [] })
       return data
     } catch (e) {
