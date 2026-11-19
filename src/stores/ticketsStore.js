@@ -1,5 +1,13 @@
 import { create } from 'zustand'
-import { getTickets, getTicket, createTicket, updateStatus, reassignTicket } from '../api/tickets.js'
+import {
+  getTickets,
+  getTicket,
+  createTicket,
+  updateStatus,
+  reassignTicket,
+  approveReassignment as apiApproveReassignment,
+  rejectReassignment as apiRejectReassignment,
+} from '../api/tickets.js'
 
 export const useTicketsStore = create((set, get) => ({
   tickets: [],
@@ -77,11 +85,43 @@ export const useTicketsStore = create((set, get) => ({
 
   reassign: async (id, assigned_to, comments = '') => {
     try {
-      const { data } = await reassignTicket(id, { assigned_to, comments })
-      set({ ticket: data.data })
+      const { data } = await reassignTicket(id, { assigned_to, comments, motivo: comments })
+      if (data.data) {
+        set({ ticket: data.data })
+      }
       return data
     } catch (e) {
-      const message = e.response?.data?.message || 'Error al reasignar el ticket'
+      const message = e.response?.data?.message || 'Error al procesar la reasignación'
+      const enriched = new Error(message)
+      enriched.errorCode = e.response?.data?.error
+      throw enriched
+    }
+  },
+
+  approveReassignment: async (ticketId, requestId, comments = '') => {
+    try {
+      const { data } = await apiApproveReassignment(ticketId, requestId, { comments, motivo: comments })
+      if (data.data) {
+        set({ ticket: data.data })
+      }
+      return data
+    } catch (e) {
+      const message = e.response?.data?.message || 'Error al aprobar la reasignación'
+      const enriched = new Error(message)
+      enriched.errorCode = e.response?.data?.error
+      throw enriched
+    }
+  },
+
+  rejectReassignment: async (ticketId, requestId, comments = '') => {
+    try {
+      const { data } = await apiRejectReassignment(ticketId, requestId, { comments, reason: comments, motivo: comments })
+      if (data.data) {
+        set({ ticket: data.data })
+      }
+      return data
+    } catch (e) {
+      const message = e.response?.data?.message || 'Error al rechazar la solicitud de reasignación'
       const enriched = new Error(message)
       enriched.errorCode = e.response?.data?.error
       throw enriched
@@ -90,4 +130,3 @@ export const useTicketsStore = create((set, get) => ({
 }))
 
 export default useTicketsStore
-

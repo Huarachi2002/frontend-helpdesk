@@ -22,10 +22,14 @@ import {
   IconArrowsExchange,
   IconAlertTriangle,
   IconX,
+  IconCheck,
 } from '@tabler/icons-react'
 import { useTicketsStore } from '../../stores/ticketsStore.js'
+import { useAuthStore } from '../../stores/authStore.js'
+import { isAdmin } from '../../utils/permissions.js'
 import { getEligibleAgents } from '../../api/tickets.js'
 import { useToast } from '../../context/ToastContext.jsx'
+import TicketWaitingHours from '../../components/TicketWaitingHours.jsx'
 import './TicketDetailView.css'
 
 export default function TicketDetailView() {
@@ -38,6 +42,11 @@ export default function TicketDetailView() {
   const fetchTicket = useTicketsStore((state) => state.fetchTicket)
   const changeStatus = useTicketsStore((state) => state.changeStatus)
   const reassign = useTicketsStore((state) => state.reassign)
+  const approveReassignment = useTicketsStore((state) => state.approveReassignment)
+  const rejectReassignment = useTicketsStore((state) => state.rejectReassignment)
+
+  const currentUser = useAuthStore((state) => state.user)
+  const userIsAdmin = useMemo(() => isAdmin(currentUser), [currentUser])
 
   const [newStatus, setNewStatus] = useState('')
   const [statusComment, setStatusComment] = useState('')
@@ -51,6 +60,13 @@ export default function TicketDetailView() {
   const [reassignComment, setReassignComment] = useState('')
   const [reassigning, setReassigning] = useState(false)
   const [reassignError, setReassignError] = useState('')
+
+  // Estados para Aprobación / Rechazo de Reasignación (Admin)
+  const [approving, setApproving] = useState(false)
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejecting, setRejecting] = useState(false)
+  const [rejectError, setRejectError] = useState('')
 
   // Transiciones permitidas desde el estado actual (vienen del TicketResource via State Pattern)
   const allowedTransitions = useMemo(() => ticket?.allowed_transitions ?? [], [ticket])
@@ -148,6 +164,31 @@ export default function TicketDetailView() {
     return map[r] ?? (r || 'Usuario')
   }
 
+  // Helper para determinar si el ticket se encuentra en estado de Espera
+  const isWaitingState = (t) => {
+    if (!t) return false
+    const state = String(t.estado || t.status || '').trim().toLowerCase()
+    return (
+      state === 'en_espera' ||
+      state === 'open' ||
+      state === 'cliente_esperando_respuesta' ||
+      state === 'waiting'
+    )
+  }
+
+  // Cálculo de horas sin responder para el ticket en estado de espera
+  const calculateWaitingHoursText = () => {
+    if (!isWaitingState(ticket)) return null
+    const createdRaw = ticket.fecha_creacion
+    if (!createdRaw) return null
+    const createdAt = new Date(createdRaw)
+    if (isNaN(createdAt.getTime())) return null
+    const diffMs = Math.max(0, new Date().getTime() - createdAt.getTime())
+    const hours = Math.floor(diffMs / (1000 * 60 * 60))
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+    return `${hours} hs ${minutes > 0 ? `${minutes} min` : ''}`
+  }
+
   const formatDate = (d) => {
     if (!d) return '—'
     return new Date(d).toLocaleDateString('es-VE', {
@@ -237,25 +278,96 @@ export default function TicketDetailView() {
 
   const handleConfirmReassign = async () => {
     if (!selectedAgentId) return
+
+    if (!userIsAdmin && !reassignComment.trim()) {
+      setReassignError('Debes ingresar una justificación o motivo para la solicitud de reasignación.')
+      return
+    }
+
     setReassigning(true)
     setReassignError('')
 
     try {
       await reassign(id, selectedAgentId, reassignComment)
       const chosen = eligibleAgents.find((a) => a.id === selectedAgentId)
-      showToast({
-        severity: 'success',
-        summary: 'Ticket Reasignado',
-        detail: `El ticket ahora está a cargo de "${chosen ? chosen.name : 'nuevo técnico'}".`,
-        life: 3500,
-      })
+      const agentName = chosen ? chosen.name : 'técnico seleccionado'
+
+      if (userIsAdmin) {
+        showToast({
+          severity: 'success',
+          summary: 'Reasignación Exitosa',
+          detail: `Ticket reasignado directamente a "${agentName}".`,
+          life: 4000,
+        })
+      } else {
+        showToast({
+          severity: 'info',
+          summary: 'Solicitud Enviada',
+          detail: `Se envió la solicitud de reasignación a "${agentName}" para aprobación de la Dirección.`,
+          life: 5000,
+        })
+      }
       setIsReassignModalOpen(false)
     } catch (err) {
       setReassignError(
-        err.message || err.response?.data?.message || 'Error al reasignar el ticket.'
+        err.message || err.response?.data?.message || 'Error al procesar la reasignación.'
       )
     } finally {
       setReassigning(false)
+    }
+  }
+
+  const handleApproveReassignment = async () => {
+    if (!ticket?.pending_reassignment) return
+    setApproving(true)
+    try {
+      await approveReassignment(ticket.id, ticket.pending_reassignment.id, 'Aprobada por la Dirección.')
+      showToast({
+        severity: 'success',
+        summary: 'Reasignación Aprobada',
+        detail: `Se autorizó la reasignación del caso a "${ticket.pending_reassignment.tecnico_propuesto?.name}".`,
+        life: 4000,
+      })
+    } catch (err) {
+      showToast({
+        severity: 'error',
+        summary: 'Error al autorizar',
+        detail: err.message || err.response?.data?.message || 'No se pudo aprobar la reasignación.',
+        life: 4000,
+      })
+    } finally {
+      setApproving(false)
+    }
+  }
+
+  const handleOpenRejectModal = () => {
+    setRejectReason('')
+    setRejectError('')
+    setIsRejectModalOpen(true)
+  }
+
+  const handleConfirmReject = async () => {
+    if (!ticket?.pending_reassignment) return
+    if (!rejectReason.trim()) {
+      setRejectError('Debes ingresar un motivo para el rechazo de la solicitud.')
+      return
+    }
+
+    setRejecting(true)
+    setRejectError('')
+    try {
+      await rejectReassignment(ticket.id, ticket.pending_reassignment.id, rejectReason)
+      showToast({
+        severity: 'warn',
+        summary: 'Solicitud Rechazada',
+        detail: 'La solicitud de reasignación fue rechazada exitosamente.',
+        life: 4000,
+      })
+      setIsRejectModalOpen(false)
+    } catch (err) {
+      setRejectError(err.message || err.response?.data?.message || 'Error al rechazar la solicitud.')
+    } finally {
+      setRejecting(false)
     }
   }
 
@@ -276,21 +388,6 @@ export default function TicketDetailView() {
             </div>
           )}
         </div>
-
-        {ticket && (
-          <div className="header-badges">
-            <Tag
-              value={statusLabel(ticket.status)}
-              severity={statusSeverity(ticket.status)}
-              rounded
-            />
-            <Tag
-              value={priorityLabel(ticket.priority)}
-              severity={prioritySeverity(ticket.priority)}
-              rounded
-            />
-          </div>
-        )}
       </div>
 
       {/* Skeleton Loading */}
@@ -383,16 +480,6 @@ export default function TicketDetailView() {
                     </span>
                   </div>
                 </div>
-
-                {ticket.correo_hilo && (
-                  <div className="meta-chip">
-                    <IconMail size={16} className="chip-icon text-purple" />
-                    <div className="chip-content">
-                      <span className="chip-title">Hilo de Correo</span>
-                      <span className="chip-value font-mono text-xs">{ticket.correo_hilo}</span>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -536,6 +623,16 @@ export default function TicketDetailView() {
                 />
               </div>
 
+              {/* Prioridad */}
+              <div className="current-status-row">
+                <span className="current-status-label">Prioridad:</span>
+                <Tag
+                  value={priorityLabel(ticket.priority)}
+                  severity={prioritySeverity(ticket.priority)}
+                  rounded
+                />
+              </div>
+
               {/* Estado final — sin transiciones posibles */}
               {allowedTransitions.length === 0 ? (
                 <div className="final-state-notice">
@@ -565,11 +662,11 @@ export default function TicketDetailView() {
                         </option>
                       ))}
                     </select>
-                    <p className="allowed-hint">
+                    {/* <p className="allowed-hint">
                       <IconInfoCircle size={13} />
                       Solo se muestran los estados válidos desde{' '}
                       <em>{statusLabel(ticket.status)}</em>.
-                    </p>
+                    </p> */}
                   </div>
 
                   <div className="form-group">
@@ -597,6 +694,76 @@ export default function TicketDetailView() {
               )}
             </div>
 
+            {/* Banner de Solicitud de Reasignación Pendiente */}
+            {ticket.pending_reassignment && (
+              <div className={`pending-reassign-banner ${userIsAdmin ? 'is-admin' : 'is-support'}`}>
+                <div className="banner-top-row">
+                  <div className="banner-title-wrap">
+                    {userIsAdmin ? (
+                      <IconAlertTriangle size={18} className="banner-icon-warning" />
+                    ) : (
+                      <IconClock size={18} className="banner-icon-info" />
+                    )}
+                    <span className="banner-title-text">
+                      {userIsAdmin
+                        ? 'Solicitud de Reasignación Pendiente'
+                        : 'Solicitud de Reasignación en Revisión'}
+                    </span>
+                  </div>
+                  <span className="banner-tag-pending">PENDIENTE</span>
+                </div>
+
+                <div className="banner-details-grid">
+                  <div className="banner-detail-item">
+                    <span className="b-label">Solicitado por:</span>
+                    <span className="b-val">{ticket.pending_reassignment.solicitante?.name || 'Técnico de soporte'}</span>
+                  </div>
+                  <div className="banner-detail-item">
+                    <span className="b-label">Técnico propuesto:</span>
+                    <span className="b-val highlight-agent">{ticket.pending_reassignment.tecnico_propuesto?.name}</span>
+                  </div>
+                  <div className="banner-detail-item full-width">
+                    <span className="b-label">Justificación técnica:</span>
+                    <span className="b-val motive-quote">"{ticket.pending_reassignment.motivo}"</span>
+                  </div>
+                  <div className="banner-detail-item full-width">
+                    <span className="b-label">Fecha de solicitud:</span>
+                    <span className="b-val">{formatDate(ticket.pending_reassignment.fecha_solicitud)}</span>
+                  </div>
+                </div>
+
+                {userIsAdmin ? (
+                  <div className="banner-admin-actions">
+                    <button
+                      type="button"
+                      className="btn-approve-banner"
+                      disabled={approving || rejecting}
+                      onClick={handleApproveReassignment}
+                      title="Autorizar la transferencia al técnico propuesto"
+                    >
+                      <IconCheck size={16} />
+                      <span>{approving ? 'Aprobando...' : 'Aprobar Reasignación'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-reject-banner"
+                      disabled={approving || rejecting}
+                      onClick={handleOpenRejectModal}
+                      title="Rechazar la solicitud de cambio"
+                    >
+                      <IconX size={16} />
+                      <span>Rechazar</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="banner-support-footer">
+                    <IconInfoCircle size={14} />
+                    <span>Tu solicitud ha sido enviada al Director para su autorización.</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Agente Asignado */}
             <div className="surface-card">
               <div className="card-section-header flex-between">
@@ -604,15 +771,32 @@ export default function TicketDetailView() {
                   <IconUser size={17} className="text-blue" />
                   <h3 className="section-heading">Técnico Asignado</h3>
                 </div>
-                <button
-                  type="button"
-                  className="btn-reassign-badge"
-                  onClick={openReassignModal}
-                  title="Reasignar ticket a otro técnico especializado"
-                >
-                  <IconArrowsExchange size={14} />
-                  <span>Reasignar</span>
-                </button>
+                {userIsAdmin ? (
+                  <button
+                    type="button"
+                    className="btn-reassign-badge"
+                    onClick={openReassignModal}
+                    title="Reasignar directamente a otro técnico especializado"
+                  >
+                    <IconArrowsExchange size={14} />
+                    <span>Reasignar Directamente</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={`btn-reassign-badge ${ticket.pending_reassignment ? 'is-disabled' : ''}`}
+                    onClick={openReassignModal}
+                    disabled={Boolean(ticket.pending_reassignment)}
+                    title={
+                      ticket.pending_reassignment
+                        ? 'Ya existe una solicitud de reasignación pendiente para este ticket'
+                        : 'Solicitar reasignación a la Dirección'
+                    }
+                  >
+                    <IconArrowsExchange size={14} />
+                    <span>{ticket.pending_reassignment ? 'Solicitud Pendiente' : 'Solicitar Reasignación'}</span>
+                  </button>
+                )}
               </div>
 
               {ticket.tecnico_asignado || ticket.assigned_to ? (
@@ -651,6 +835,9 @@ export default function TicketDetailView() {
               )}
             </div>
 
+            {/* Componente Dinámico de Horas sin Responder (Solo visible en Estado de Espera) */}
+            <TicketWaitingHours ticket={ticket} />
+
             {/* Métricas SLA & Tiempos */}
             <div className="surface-card">
               <div className="card-section-header">
@@ -665,6 +852,15 @@ export default function TicketDetailView() {
                     {formatDate(ticket.fecha_respuesta || ticket.times?.first_response_at)}
                   </span>
                 </div>
+                {/* Solo se refleja en estado de Espera */}
+                {isWaitingState(ticket) && (
+                  <div className="sla-row">
+                    <span className="sla-label">Tiempo en Espera:</span>
+                    <span className="sla-val text-amber font-semibold">
+                      {calculateWaitingHoursText()}
+                    </span>
+                  </div>
+                )}
                 <div className="sla-row">
                   <span className="sla-label">Resolución (MTTR):</span>
                   <span className="sla-val">
@@ -696,9 +892,16 @@ export default function TicketDetailView() {
           <div className="reassign-modal-card">
             <div className="modal-header">
               <div className="modal-title-group">
-                <h2 className="modal-title">Reasignar Técnico Especializado</h2>
+                <h2 className="modal-title">
+                  {userIsAdmin
+                    ? 'Reasignar Técnico Especializado (Directo)'
+                    : 'Solicitar Reasignación de Técnico'}
+                </h2>
                 <span className="modal-subtitle">
-                  Ticket {ticket.codigo || `#${ticket.id}`}
+                  Ticket {ticket.codigo || `#${ticket.id}`} ·{' '}
+                  {userIsAdmin
+                    ? 'Como Administrador, la reasignación se aplicará de inmediato'
+                    : 'Requiere revisión y autorización del Administrador (Director)'}
                 </span>
               </div>
               <button
@@ -800,8 +1003,7 @@ export default function TicketDetailView() {
 
                           <div className="agent-card-meta">
                             <span className="workload-text">
-                              Carga activa: <b>{agent.assigned_tickets_count}</b> / máx{' '}
-                              {agent.max_active_tickets}
+                              Carga activa: <b>{agent.assigned_tickets_count}</b>
                             </span>
                             {agent.department && (
                               <span className="meta-department">
@@ -819,15 +1021,22 @@ export default function TicketDetailView() {
               {/* Comentario de Reasignación */}
               <div className="form-group mt-3">
                 <label className="form-label" htmlFor="reassign-comment">
-                  Motivo o comentario de la reasignación (opcional):
+                  {userIsAdmin
+                    ? 'Motivo o comentario de la reasignación (opcional):'
+                    : 'Justificación o motivo técnico de la reasignación (Requerido): *'}
                 </label>
                 <textarea
                   id="reassign-comment"
                   value={reassignComment}
                   rows={2}
                   className="textarea-field"
-                  placeholder="Ej. Se deriva por especialidad técnica en configuración del campus..."
+                  placeholder={
+                    userIsAdmin
+                      ? 'Ej. Reasignación directa por especialidad técnica en campus...'
+                      : 'Ej. Se solicita derivar por alta carga o especialidad requerida en el campus virtual...'
+                  }
                   onChange={(e) => setReassignComment(e.target.value)}
+                  required={!userIsAdmin}
                 />
               </div>
 
@@ -851,13 +1060,97 @@ export default function TicketDetailView() {
               <button
                 type="button"
                 className="btn-primary"
-                disabled={!selectedAgentId || reassigning || eligibleAgents.length === 0}
+                disabled={
+                  !selectedAgentId ||
+                  reassigning ||
+                  eligibleAgents.length === 0 ||
+                  (!userIsAdmin && !reassignComment.trim())
+                }
                 onClick={handleConfirmReassign}
               >
                 <IconArrowsExchange size={16} />
                 <span>
-                  {reassigning ? 'Reasignando...' : 'Confirmar Reasignación'}
+                  {reassigning
+                    ? (userIsAdmin ? 'Reasignando...' : 'Enviando solicitud...')
+                    : (userIsAdmin ? 'Confirmar Reasignación Directa' : 'Enviar Solicitud a Dirección')}
                 </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Rechazar Solicitud de Reasignación (Admin) */}
+      {isRejectModalOpen && (
+        <div
+          className="reassign-modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsRejectModalOpen(false)
+          }}
+        >
+          <div className="reassign-modal-card" style={{ maxWidth: '480px' }}>
+            <div className="modal-header">
+              <div className="modal-title-group">
+                <h2 className="modal-title" style={{ color: '#e11d48' }}>Rechazar Solicitud de Reasignación</h2>
+                <span className="modal-subtitle">
+                  Ticket {ticket.codigo || `#${ticket.id}`}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setIsRejectModalOpen(false)}
+              >
+                <IconX size={20} />
+              </button>
+            </div>
+
+            <div className="reassign-modal-body">
+              <p style={{ fontSize: '13.5px', color: '#475569', marginBottom: '14px', lineHeight: '1.5' }}>
+                Indica el motivo por el cual estás rechazando la reasignación solicitada por{' '}
+                <b>{ticket.pending_reassignment?.solicitante?.name || 'el técnico'}</b> hacia{' '}
+                <b>{ticket.pending_reassignment?.tecnico_propuesto?.name || 'otro técnico'}</b>.
+              </p>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="reject-reason">
+                  Motivo o justificación del rechazo: *
+                </label>
+                <textarea
+                  id="reject-reason"
+                  value={rejectReason}
+                  rows={3}
+                  className="textarea-field"
+                  placeholder="Ej. El técnico asignado cuenta con la disponibilidad y especialidad requerida..."
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+              </div>
+
+              {rejectError && (
+                <div className="reassign-error-alert">
+                  <IconAlertCircle size={16} />
+                  <span>{rejectError}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={rejecting}
+                onClick={() => setIsRejectModalOpen(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn-danger-action"
+                disabled={rejecting || !rejectReason.trim()}
+                onClick={handleConfirmReject}
+              >
+                <IconX size={16} />
+                <span>{rejecting ? 'Rechazando...' : 'Confirmar Rechazo'}</span>
               </button>
             </div>
           </div>

@@ -5,6 +5,8 @@ import {
   IconChartBar,
   IconUsers,
   IconFolders,
+  IconFlame,
+  IconSettings,
 } from '@tabler/icons-react'
 import { ROLES, hasRole } from '../utils/permissions.js'
 
@@ -93,7 +95,25 @@ export const NAVIGATION_SCHEMA = [
         to: '/categories',
         icon: IconFolders,
         roles: [ROLES.ADMIN],
-        description: 'Clasificación de incidencias y prioridades',
+        description: 'Clasificación temática de incidencias',
+        badge: null,
+      },
+      {
+        id: 'nav-priorities',
+        title: 'Prioridades & SLAs',
+        to: '/priorities',
+        icon: IconFlame,
+        roles: [ROLES.ADMIN],
+        description: 'Niveles de urgencia, pesos de escalamiento y tiempos SLA',
+        badge: null,
+      },
+      {
+        id: 'nav-settings',
+        title: 'Configuraciones',
+        to: '/settings',
+        icon: IconSettings,
+        roles: [ROLES.ADMIN],
+        description: 'Parámetros del sistema y políticas globales de notificación',
         badge: null,
       },
     ],
@@ -179,7 +199,21 @@ export function getRouteContext(pathname = '') {
     return {
       title: 'Gestión de Categorías',
       category: 'Administración',
-      subtitle: 'Clasificación de incidencias y niveles de atención',
+      subtitle: 'Clasificación de incidencias y temáticas de soporte',
+    }
+  }
+  if (pathname.startsWith('/priorities')) {
+    return {
+      title: 'Gestión de Prioridades & SLAs',
+      category: 'Administración',
+      subtitle: 'Niveles de urgencia, escalamiento y tiempos de resolución comprometidos',
+    }
+  }
+  if (pathname.startsWith('/settings')) {
+    return {
+      title: 'Configuraciones & Notificaciones',
+      category: 'Administración',
+      subtitle: 'Parámetros de recordatorios, tiempos de espera y canales de alerta',
     }
   }
   return {

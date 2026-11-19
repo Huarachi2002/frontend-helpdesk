@@ -15,6 +15,8 @@ import BotHistoryView from './views/admin/BotHistoryView.jsx'
 import ReportView from './views/reports/ReportView.jsx'
 import UsersManagementView from './views/admin/UsersManagementView.jsx'
 import CategoriesManagementView from './views/admin/CategoriesManagementView.jsx'
+import PrioritiesManagementView from './views/admin/PrioritiesManagementView.jsx'
+import SettingsManagementView from './views/admin/SettingsManagementView.jsx'
 
 export default function App() {
   return (
@@ -107,6 +109,26 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
                 <CategoriesManagementView />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Gestión de Prioridades y SLAs: Exclusivo Administrador */}
+          <Route
+            path="priorities"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                <PrioritiesManagementView />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Configuraciones del Sistema & Políticas Globales de Notificación: Exclusivo Administrador */}
+          <Route
+            path="settings"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                <SettingsManagementView />
               </ProtectedRoute>
             }
           />

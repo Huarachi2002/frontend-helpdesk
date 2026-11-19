@@ -12,6 +12,7 @@ import {
 import { useAuthStore } from '../stores/authStore.js'
 import { getNavigationForUser, getRouteContext } from '../config/navigation.js'
 import { getRoleMeta, isAdmin } from '../utils/permissions.js'
+import NotificationBell from '../components/NotificationBell.jsx'
 import './AppLayout.css'
 
 export default function AppLayout() {
@@ -172,6 +173,8 @@ export default function AppLayout() {
           </div>
 
           <div className="topbar-right">
+            {/* Bandeja de Notificaciones In-App */}
+            <NotificationBell />
 
             <div className="topbar-user">
               <span className="topbar-greeting">

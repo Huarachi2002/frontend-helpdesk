@@ -726,9 +726,19 @@ export default function TicketListView() {
                             <div className="user-mini-avatar technician">
                               {tecnicoNombre.charAt(0).toUpperCase()}
                             </div>
-                            <span className="technician-name-text" title={tecnicoNombre}>
-                              {tecnicoNombre.slice(0, 12) + (tecnicoNombre.length > 12 ? '...' : '')}
-                            </span>
+                            <div className="technician-info-col">
+                              <span className="technician-name-text" title={tecnicoNombre}>
+                                {tecnicoNombre.slice(0, 14) + (tecnicoNombre.length > 14 ? '...' : '')}
+                              </span>
+                              {t.pending_reassignment && (
+                                <span
+                                  className="pending-reassign-mini-tag"
+                                  title={`Reasignación solicitada hacia ${t.pending_reassignment.tecnico_propuesto?.name || 'otro técnico'}`}
+                                >
+                                  Reasignación pendiente
+                                </span>
+                              )}
+                            </div>
                           </div>
                         ) : (
                           <span className="unassigned-chip" title="Pendiente de asignación por el motor">
