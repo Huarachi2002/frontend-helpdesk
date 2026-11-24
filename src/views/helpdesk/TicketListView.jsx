@@ -730,6 +730,14 @@ export default function TicketListView() {
                               <span className="technician-name-text" title={tecnicoNombre}>
                                 {tecnicoNombre.slice(0, 14) + (tecnicoNombre.length > 14 ? '...' : '')}
                               </span>
+                              {t.tecnico_asignado?.asignacion_metricas?.score && (
+                                <span
+                                  className="affinity-score-tag"
+                                  title={`Idoneidad: ${t.tecnico_asignado.asignacion_metricas.score}/100 según los 4 criterios de asignación`}
+                                >
+                                  {t.tecnico_asignado.asignacion_metricas.score}% afinidad
+                                </span>
+                              )}
                               {t.pending_reassignment && (
                                 <span
                                   className="pending-reassign-mini-tag"

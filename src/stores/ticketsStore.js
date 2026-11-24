@@ -4,6 +4,7 @@ import {
   getTicket,
   createTicket,
   updateStatus,
+  replyTicket as apiReplyTicket,
   reassignTicket,
   approveReassignment as apiApproveReassignment,
   rejectReassignment as apiRejectReassignment,
@@ -77,6 +78,26 @@ export const useTicketsStore = create((set, get) => ({
       enriched.errorCode = responseData.error ?? null
       enriched.currentStatus = responseData.current_status ?? null
       enriched.targetStatus = responseData.target_status ?? null
+      enriched.allowedTransitions = responseData.allowed_transitions ?? null
+      enriched.httpStatus = e.response?.status ?? 500
+      throw enriched
+    }
+  },
+
+  replyTicket: async (id, mensaje, nextStatus = null) => {
+    try {
+      const payload = { mensaje }
+      if (nextStatus) payload.next_status = nextStatus
+      const { data } = await apiReplyTicket(id, payload)
+      if (data.data) {
+        set({ ticket: data.data })
+      }
+      return data
+    } catch (e) {
+      const responseData = e.response?.data ?? {}
+      const validation = responseData.errors ? Object.values(responseData.errors).flat()[0] : null
+      const enriched = new Error(validation || responseData.message || 'Error al enviar la respuesta')
+      enriched.errorCode = responseData.error ?? null
       enriched.allowedTransitions = responseData.allowed_transitions ?? null
       enriched.httpStatus = e.response?.status ?? 500
       throw enriched

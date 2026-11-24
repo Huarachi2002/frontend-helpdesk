@@ -13,6 +13,7 @@ import { useAuthStore } from '../stores/authStore.js'
 import { getNavigationForUser, getRouteContext } from '../config/navigation.js'
 import { getRoleMeta, isAdmin } from '../utils/permissions.js'
 import NotificationBell from '../components/NotificationBell.jsx'
+import GlobalSearch from '../components/GlobalSearch.jsx'
 import './AppLayout.css'
 
 export default function AppLayout() {
@@ -171,6 +172,8 @@ export default function AppLayout() {
               <span className="context-current">{routeContext.title}</span>
             </div>
           </div>
+
+          <GlobalSearch />
 
           <div className="topbar-right">
             {/* Bandeja de Notificaciones In-App */}

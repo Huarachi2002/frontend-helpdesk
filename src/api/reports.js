@@ -9,3 +9,8 @@ export const exportReport = (format, params = {}) =>
     params: { format, ...params },
     responseType: 'blob',
   })
+
+
+export const getDashboardReport = () => {
+  return api.get('/reports/dashboard')
+}

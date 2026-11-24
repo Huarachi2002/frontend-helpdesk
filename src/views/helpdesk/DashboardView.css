@@ -328,3 +328,217 @@
   display: block;
   line-height: 1.4;
 }
+
+/* ===== SECCIÓN DE FÓRMULAS FRT/MTTR ===== */
+.formulas-section {
+  background: #fff;
+  border: 1.5px solid #f1f5f9;
+  border-radius: 14px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.formulas-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 1rem;
+}
+
+.formulas-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .formulas-grid { grid-template-columns: 1fr; }
+}
+
+.formula-card {
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1.5px solid #e2e8f0;
+}
+
+.formula-frt { background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%); border-color: #fde68a; }
+.formula-mttr { background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border-color: #bfdbfe; }
+
+.formula-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 1rem;
+}
+
+.formula-equation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.formula-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  font-style: italic;
+}
+
+.formula-eq {
+  font-size: 1.3rem;
+  color: #64748b;
+}
+
+.formula-fraction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.formula-num {
+  font-size: 0.82rem;
+  color: #374151;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #64748b;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.formula-den {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.formula-sub { font-size: 0.65rem; vertical-align: sub; }
+.formula-sup { font-size: 0.65rem; vertical-align: super; }
+
+.formula-desc {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+
+.formula-current {
+  font-size: 0.82rem;
+  color: #374151;
+  background: rgba(255,255,255,0.7);
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+/* ===== SECCIÓN DE GRÁFICOS ANALÍTICOS ===== */
+.analytics-section {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .analytics-section { grid-template-columns: 1fr; }
+}
+
+.chart-card {
+  background: #fff;
+  border: 1.5px solid #f1f5f9;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.chart-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.text-blue { color: #3b82f6; }
+.text-purple { color: #8b5cf6; }
+
+.chart-body {
+  padding: 1.25rem;
+  height: 280px;
+  position: relative;
+}
+
+.chart-body.donut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+}
+
+.donut-center {
+  position: absolute;
+  top: 50%;
+  left: 35%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.donut-total {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.donut-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.estado-list {
+  padding: 0 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.estado-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.estado-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.estado-name { flex: 1; color: #334155; }
+.estado-count { font-weight: 700; color: #0f172a; min-width: 24px; text-align: right; }
+.estado-pct { color: #94a3b8; min-width: 36px; text-align: right; }

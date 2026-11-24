@@ -17,6 +17,7 @@ import UsersManagementView from './views/admin/UsersManagementView.jsx'
 import CategoriesManagementView from './views/admin/CategoriesManagementView.jsx'
 import PrioritiesManagementView from './views/admin/PrioritiesManagementView.jsx'
 import SettingsManagementView from './views/admin/SettingsManagementView.jsx'
+import AuditLogView from './views/admin/AuditLogView.jsx'
 
 export default function App() {
   return (
@@ -129,6 +130,16 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
                 <SettingsManagementView />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Bitácora de Auditoría: Exclusivo Administrador */}
+          <Route
+            path="audit-logs"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                <AuditLogView />
               </ProtectedRoute>
             }
           />

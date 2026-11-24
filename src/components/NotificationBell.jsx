@@ -11,6 +11,7 @@ import {
   IconAlertTriangle,
   IconChevronRight,
   IconInfoCircle,
+  IconMessageReply,
 } from '@tabler/icons-react'
 import { useNotificationsStore } from '../stores/notificationsStore.js'
 import './NotificationBell.css'
@@ -106,6 +107,8 @@ export default function NotificationBell() {
         return <IconAlertTriangle size={16} className="notif-icon-reminder" />
       case 'TICKET_SIN_RESPUESTA':
         return <IconInfoCircle size={16} className="notif-icon-wait" />
+      case 'RESPUESTA_TICKET':
+        return <IconMessageReply size={16} className="notif-icon-ticket" />
       default:
         return <IconTicket size={16} className="notif-icon-ticket" />
     }

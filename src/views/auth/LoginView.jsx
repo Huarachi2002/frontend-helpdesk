@@ -54,7 +54,7 @@ export default function LoginView() {
           <div className="brand-avatar">
             <IconHeadset size={28} strokeWidth={2} />
           </div>
-          <h1 className="brand-title">Helpdesk Campus</h1>
+          <h1 className="brand-title">Mesa Ayuda | UAGRM</h1>
           <p className="brand-desc">
             Plataforma de soporte y gestión de incidencias académicas
           </p>

@@ -23,6 +23,10 @@ import {
   IconAlertTriangle,
   IconX,
   IconCheck,
+  IconChartBar,
+  IconTarget,
+  IconBolt,
+  IconAward,
 } from '@tabler/icons-react'
 import { useTicketsStore } from '../../stores/ticketsStore.js'
 import { useAuthStore } from '../../stores/authStore.js'
@@ -30,6 +34,7 @@ import { isAdmin } from '../../utils/permissions.js'
 import { getEligibleAgents } from '../../api/tickets.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import TicketWaitingHours from '../../components/TicketWaitingHours.jsx'
+import TicketConversation from '../../components/TicketConversation.jsx'
 import './TicketDetailView.css'
 
 export default function TicketDetailView() {
@@ -41,6 +46,7 @@ export default function TicketDetailView() {
   const error = useTicketsStore((state) => state.error)
   const fetchTicket = useTicketsStore((state) => state.fetchTicket)
   const changeStatus = useTicketsStore((state) => state.changeStatus)
+  const replyTicket = useTicketsStore((state) => state.replyTicket)
   const reassign = useTicketsStore((state) => state.reassign)
   const approveReassignment = useTicketsStore((state) => state.approveReassignment)
   const rejectReassignment = useTicketsStore((state) => state.rejectReassignment)
@@ -238,6 +244,33 @@ export default function TicketDetailView() {
     } finally {
       setActionLoading(false)
     }
+  }
+
+  const handleReply = async (mensaje, nextStatus) => {
+    const res = await replyTicket(id, mensaje, nextStatus)
+    const change = res.status_change
+    const statusText = change?.changed
+      ? ` El ticket pasó a "${statusLabel(change.to)}".`
+      : ''
+
+    if (res.email?.sent) {
+      showToast({
+        severity: 'success',
+        summary: 'Respuesta Enviada',
+        detail: `La respuesta se envió por correo.${statusText}`,
+        life: 4000,
+      })
+    } else {
+      showToast({
+        severity: 'warn',
+        summary: 'Respuesta Registrada',
+        detail: `La respuesta se guardó, pero no se pudo enviar el correo${
+          res.email?.error ? ` (${res.email.error})` : ''
+        }.${statusText}`,
+        life: 7000,
+      })
+    }
+    return res
   }
 
   const tierLabel = (t) => {
@@ -524,6 +557,15 @@ export default function TicketDetailView() {
               </div>
             </div>
 
+            {/* Respuestas por correo */}
+            <TicketConversation
+              ticket={ticket}
+              currentUser={currentUser}
+              onReply={handleReply}
+              statusLabel={statusLabel}
+              formatDate={formatDate}
+            />
+
             {/* Historial y Conversación (Timeline) */}
             <div className="surface-card">
               <div className="card-section-header">
@@ -800,34 +842,139 @@ export default function TicketDetailView() {
               </div>
 
               {ticket.tecnico_asignado || ticket.assigned_to ? (
-                <div className="assigned-profile">
-                  <div className="profile-avatar">
-                    {(
-                      ticket.tecnico_asignado?.nombre ||
-                      ticket.tecnico_asignado?.name ||
-                      ticket.assigned_to?.name ||
-                      'T'
-                    ).charAt(0).toUpperCase()}
+                <>
+                  <div className="assigned-profile">
+                    <div className="profile-avatar">
+                      {(
+                        ticket.tecnico_asignado?.nombre ||
+                        ticket.tecnico_asignado?.name ||
+                        ticket.assigned_to?.name ||
+                        'T'
+                      ).charAt(0).toUpperCase()}
+                    </div>
+                    <div className="profile-info">
+                      <div className="profile-name">
+                        {ticket.tecnico_asignado?.name ||
+                          `${ticket.tecnico_asignado?.nombre || ''} ${ticket.tecnico_asignado?.apellido || ''}`.trim() ||
+                          ticket.assigned_to?.name}
+                      </div>
+                      <div className="profile-email">
+                        <IconMail size={13} />
+                        <span>
+                          {ticket.tecnico_asignado?.correo ||
+                            ticket.tecnico_asignado?.email ||
+                            ticket.assigned_to?.email}
+                        </span>
+                      </div>
+                      <div className="profile-badge-sub">
+                        {roleLabel(ticket.tecnico_asignado?.rol || 'TECNICO')}
+                      </div>
+                    </div>
                   </div>
-                  <div className="profile-info">
-                    <div className="profile-name">
-                      {ticket.tecnico_asignado?.name ||
-                        `${ticket.tecnico_asignado?.nombre || ''} ${ticket.tecnico_asignado?.apellido || ''}`.trim() ||
-                        ticket.assigned_to?.name}
-                    </div>
-                    <div className="profile-email">
-                      <IconMail size={13} />
-                      <span>
-                        {ticket.tecnico_asignado?.correo ||
-                          ticket.tecnico_asignado?.email ||
-                          ticket.assigned_to?.email}
-                      </span>
-                    </div>
-                    <div className="profile-badge-sub">
-                      {roleLabel(ticket.tecnico_asignado?.rol || 'TECNICO')}
-                    </div>
-                  </div>
-                </div>
+
+                  {/* Estadísticas de Idoneidad del Técnico Asignado (4 Criterios de Asignación) */}
+                  {(ticket.tecnico_asignado?.asignacion_metricas || ticket.assigned_to?.asignacion_metricas) && (() => {
+                    const metricas = ticket.tecnico_asignado?.asignacion_metricas || ticket.assigned_to?.asignacion_metricas
+                    const raw = metricas.raw_metrics || {}
+                    const breakdown = metricas.breakdown || {}
+                    const score = metricas.score ?? 50
+
+                    return (
+                      <div className="assignment-stats-box">
+                        <div className="stats-box-header">
+                          <div className="stats-title-wrap">
+                            <IconAward size={15} className="text-primary" />
+                            <span className="stats-box-title">Idoneidad del Técnico</span>
+                          </div>
+                          <span className="affinity-score-pill" title={metricas.summary || ''}>
+                            {score}% Afinidad
+                          </span>
+                        </div>
+
+                        <div className="affinity-bar-track">
+                          <div
+                            className="affinity-bar-fill"
+                            style={{
+                              width: `${Math.min(100, Math.max(5, score))}%`,
+                              backgroundColor:
+                                score >= 70
+                                  ? '#10b981'
+                                  : score >= 50
+                                  ? '#0284c7'
+                                  : '#f59e0b',
+                            }}
+                          />
+                        </div>
+
+                        <div className="assignment-metrics-grid">
+                          {/* Criterio 1: Carga actual */}
+                          <div className="metric-chip" title="Criterio 1: Tickets activos asignados actualmente">
+                            <div className="metric-chip-icon bg-blue-subtle text-blue">
+                              <IconChartBar size={13} />
+                            </div>
+                            <div className="metric-chip-data">
+                              <span className="metric-chip-label">Carga Activa</span>
+                              <span className="metric-chip-value">
+                                {raw.active_workload ?? 0} {raw.active_workload === 1 ? 'ticket' : 'tickets'}
+                              </span>
+                              <span className="metric-chip-sub">
+                                Score: {breakdown.workload ?? 0}%
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Criterio 2: Especialidad */}
+                          <div className="metric-chip" title="Criterio 2: Casos resueltos en esta categoría">
+                            <div className="metric-chip-icon bg-emerald-subtle text-emerald">
+                              <IconTarget size={13} />
+                            </div>
+                            <div className="metric-chip-data">
+                              <span className="metric-chip-label">Especialidad</span>
+                              <span className="metric-chip-value">
+                                {raw.category_tickets ?? 0} resueltos
+                              </span>
+                              <span className="metric-chip-sub">
+                                En categoría
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Criterio 3: SLA */}
+                          <div className="metric-chip" title="Criterio 3: % de tickets resueltos dentro del SLA">
+                            <div className="metric-chip-icon bg-purple-subtle text-purple">
+                              <IconClock size={13} />
+                            </div>
+                            <div className="metric-chip-data">
+                              <span className="metric-chip-label">Cumplimiento SLA</span>
+                              <span className="metric-chip-value">
+                                {raw.sla_rate ?? 100}%
+                              </span>
+                              <span className="metric-chip-sub">
+                                {raw.sla_compliant ?? 0} a tiempo
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Criterio 4: Velocidad MTTR */}
+                          <div className="metric-chip" title="Criterio 4: Tiempo medio de resolución en horas">
+                            <div className="metric-chip-icon bg-amber-subtle text-amber">
+                              <IconBolt size={13} />
+                            </div>
+                            <div className="metric-chip-data">
+                              <span className="metric-chip-label">Velocidad MTTR</span>
+                              <span className="metric-chip-value">
+                                {raw.mttr_hours > 0 ? `${raw.mttr_hours}h` : 'N/A'}
+                              </span>
+                              <span className="metric-chip-sub">
+                                Prom. resolución
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </>
               ) : (
                 <div className="unassigned-profile">
                   <span>Ticket pendiente de asignación técnica</span>
@@ -968,52 +1115,121 @@ export default function TicketDetailView() {
                   </div>
                 ) : (
                   <div className="agents-selectable-list">
-                    {eligibleAgents.map((agent) => (
-                      <div
-                        key={agent.id}
-                        className={`agent-select-card ${
-                          selectedAgentId === agent.id ? 'selected' : ''
-                        } ${agent.is_current_assignee ? 'is-current' : ''}`}
-                        onClick={() => setSelectedAgentId(agent.id)}
-                      >
-                        <div className="agent-radio-indicator">
-                          <div
-                            className={`radio-dot ${
-                              selectedAgentId === agent.id ? 'checked' : ''
-                            }`}
-                          />
-                        </div>
+                    {eligibleAgents.map((agent, index) => {
+                      const isTopRecommended = index === 0 && !agent.is_current_assignee && (agent.assignment_score ?? 0) > 0
+                      const scoreVal = agent.assignment_score ?? 50
+                      const raw = agent.raw_metrics || {}
 
-                        <div className="agent-avatar">
-                          {agent.name?.charAt(0).toUpperCase()}
-                        </div>
+                      return (
+                        <div
+                          key={agent.id}
+                          className={`agent-select-card ${
+                            selectedAgentId === agent.id ? 'selected' : ''
+                          } ${agent.is_current_assignee ? 'is-current' : ''}`}
+                          onClick={() => setSelectedAgentId(agent.id)}
+                        >
+                          <div className="agent-card-main-row">
+                            <div className="agent-radio-indicator">
+                              <div
+                                className={`radio-dot ${
+                                  selectedAgentId === agent.id ? 'checked' : ''
+                                }`}
+                              />
+                            </div>
 
-                        <div className="agent-card-info">
-                          <div className="agent-card-top">
-                            <span className="agent-card-name">{agent.name}</span>
-                            {agent.is_current_assignee && (
-                              <span className="current-pill">Asignado actual</span>
-                            )}
-                            {/* <span className={`tier-badge tier-${agent.tier_level}`}>
-                              Tier {agent.tier_level} ({tierLabel(agent.tier_level)})
-                            </span> */}
+                            <div className="agent-avatar">
+                              {agent.name?.charAt(0).toUpperCase()}
+                            </div>
+
+                            <div className="agent-card-info">
+                              <div className="agent-card-top">
+                                <span className="agent-card-name">{agent.name}</span>
+                                {agent.is_current_assignee && (
+                                  <span className="current-pill">Asignado actual</span>
+                                )}
+                                {isTopRecommended && (
+                                  <span className="recommended-pill">
+                                    <IconAward size={11} /> #1 Recomendado
+                                  </span>
+                                )}
+                              </div>
+
+                              <span className="agent-card-email">{agent.email}</span>
+                            </div>
+
+                            {/* Badge de Puntuación Global de Idoneidad */}
+                            <div className="agent-score-container" title="Puntuación ponderada según los 4 criterios de asignación">
+                              <div className="score-badge-wrap">
+                                <span className="score-number">{scoreVal}</span>
+                                <span className="score-max">/100</span>
+                              </div>
+                              <div className="agent-mini-score-bar">
+                                <div
+                                  className="agent-mini-score-fill"
+                                  style={{
+                                    width: `${Math.min(100, Math.max(5, scoreVal))}%`,
+                                    backgroundColor:
+                                      scoreVal >= 70
+                                        ? '#10b981'
+                                        : scoreVal >= 50
+                                        ? '#0284c7'
+                                        : '#f59e0b',
+                                  }}
+                                />
+                              </div>
+                              <span className="score-caption">Idoneidad</span>
+                            </div>
                           </div>
 
-                          <span className="agent-card-email">{agent.email}</span>
-
-                          <div className="agent-card-meta">
-                            <span className="workload-text">
-                              Carga activa: <b>{agent.assigned_tickets_count}</b>
-                            </span>
-                            {agent.department && (
-                              <span className="meta-department">
-                                • {agent.department}
+                          {/* Estadísticas de los 4 Criterios de Asignación */}
+                          <div className="agent-algo-stats-row">
+                            {/* Criterio 1: Carga */}
+                            <div className="algo-stat-item" title="Criterio 1: Carga actual de trabajo">
+                              <span className="algo-stat-icon text-blue">
+                                <IconChartBar size={12} />
                               </span>
-                            )}
+                              <span className="algo-stat-label">Carga:</span>
+                              <span className="algo-stat-val">
+                                {raw.active_workload ?? agent.assigned_tickets_count ?? 0} act.
+                              </span>
+                            </div>
+
+                            {/* Criterio 2: Especialidad */}
+                            <div className="algo-stat-item" title="Criterio 2: Casos resueltos en esta categoría">
+                              <span className="algo-stat-icon text-emerald">
+                                <IconTarget size={12} />
+                              </span>
+                              <span className="algo-stat-label">Especialidad:</span>
+                              <span className="algo-stat-val">
+                                {raw.category_tickets ?? 0} resueltos
+                              </span>
+                            </div>
+
+                            {/* Criterio 3: SLA */}
+                            <div className="algo-stat-item" title="Criterio 3: % de tickets resueltos dentro del SLA">
+                              <span className="algo-stat-icon text-purple">
+                                <IconClock size={12} />
+                              </span>
+                              <span className="algo-stat-label">SLA:</span>
+                              <span className="algo-stat-val">
+                                {raw.sla_rate ?? 100}%
+                              </span>
+                            </div>
+
+                            {/* Criterio 4: MTTR */}
+                            <div className="algo-stat-item" title="Criterio 4: Tiempo medio de resolución en horas">
+                              <span className="algo-stat-icon text-amber">
+                                <IconBolt size={12} />
+                              </span>
+                              <span className="algo-stat-label">MTTR:</span>
+                              <span className="algo-stat-val">
+                                {raw.mttr_hours > 0 ? `${raw.mttr_hours}h` : 'N/A'}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>

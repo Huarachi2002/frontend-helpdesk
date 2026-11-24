@@ -7,6 +7,7 @@ import {
   IconFolders,
   IconFlame,
   IconSettings,
+  IconShieldCheck,
 } from '@tabler/icons-react'
 import { ROLES, hasRole } from '../utils/permissions.js'
 
@@ -80,6 +81,15 @@ export const NAVIGATION_SCHEMA = [
     sectionTitle: 'ADMINISTRACIÓN DEL SISTEMA',
     roles: [ROLES.ADMIN],
     items: [
+      {
+        id: 'nav-audit-logs',
+        title: 'Bitácora',
+        to: '/audit-logs',
+        icon: IconShieldCheck,
+        roles: [ROLES.ADMIN],
+        description: 'Registro de accesos, intentos de login y actividad del sistema',
+        badge: null,
+      },
       {
         id: 'nav-users',
         title: 'Usuarios & Roles',
@@ -186,6 +196,13 @@ export function getRouteContext(pathname = '') {
       title: 'Reportes & KPIs',
       category: 'Analítica',
       subtitle: 'Tiempos de resolución (MTTR), primera respuesta (FRT) y métricas SLA',
+    }
+  }
+  if (pathname.startsWith('/audit-logs')) {
+    return {
+      title: 'Bitácora de Auditoría',
+      category: 'Administración',
+      subtitle: 'Registro persistente de accesos, inicios de sesión e intentos fallidos',
     }
   }
   if (pathname.startsWith('/users')) {

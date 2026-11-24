@@ -497,6 +497,135 @@
   font-style: italic;
 }
 
+/* Caja de Estadísticas de Asignación / Idoneidad del Técnico */
+.ticket-detail-view .assignment-stats-box {
+  margin-top: 10px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ticket-detail-view .stats-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ticket-detail-view .stats-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ticket-detail-view .stats-box-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: 0.2px;
+}
+
+.ticket-detail-view .affinity-score-pill {
+  font-size: 11px;
+  font-weight: 700;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.ticket-detail-view .affinity-bar-track {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ticket-detail-view .affinity-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+
+.ticket-detail-view .assignment-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.ticket-detail-view .metric-chip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  background: #ffffff;
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.ticket-detail-view .metric-chip:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.ticket-detail-view .metric-chip-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ticket-detail-view .bg-blue-subtle { background: #eff6ff; }
+.ticket-detail-view .text-blue { color: #2563eb; }
+
+.ticket-detail-view .bg-emerald-subtle { background: #ecfdf5; }
+.ticket-detail-view .text-emerald { color: #059669; }
+
+.ticket-detail-view .bg-purple-subtle { background: #faf5ff; }
+.ticket-detail-view .text-purple { color: #9333ea; }
+
+.ticket-detail-view .bg-amber-subtle { background: #fffbeb; }
+.ticket-detail-view .text-amber { color: #d97706; }
+
+.ticket-detail-view .metric-chip-data {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.ticket-detail-view .metric-chip-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.ticket-detail-view .metric-chip-value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.ticket-detail-view .metric-chip-sub {
+  font-size: 10px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* SLA List */
 .ticket-detail-view .sla-list {
   display: flex;
@@ -730,19 +859,19 @@
 .agents-selectable-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 240px;
+  gap: 10px;
+  max-height: 320px;
   overflow-y: auto;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  padding: 8px;
+  padding: 10px;
   background: #f8fafc;
 }
 
 .agent-select-card {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
   background: #ffffff;
@@ -763,7 +892,14 @@
 }
 
 .agent-select-card.is-current {
-  opacity: 0.85;
+  opacity: 0.9;
+  border-left: 3px solid #0284c7;
+}
+
+.agent-card-main-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .agent-radio-indicator {
@@ -808,13 +944,13 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  gap: 2px;
+  gap: 1px;
 }
 
 .agent-card-top {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -825,7 +961,7 @@
 }
 
 .current-pill {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 10px;
@@ -833,29 +969,106 @@
   color: #ffffff;
 }
 
-.tier-badge {
+.recommended-pill {
   font-size: 10px;
   font-weight: 700;
   padding: 1px 6px;
-  border-radius: 6px;
+  border-radius: 10px;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
-
-.tier-badge.tier-1 { background: #e0f2fe; color: #0369a1; }
-.tier-badge.tier-2 { background: #ede9fe; color: #6d28d9; }
-.tier-badge.tier-3 { background: #fef3c7; color: #b45309; }
 
 .agent-card-email {
   font-size: 11.5px;
   color: #64748b;
 }
 
-.agent-card-meta {
-  font-size: 11px;
+/* Score de afinidad en tarjeta de agente */
+.agent-score-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 65px;
+}
+
+.score-badge-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+.score-number {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.score-max {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.agent-mini-score-bar {
+  width: 54px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.agent-mini-score-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.score-caption {
+  font-size: 9px;
+  font-weight: 600;
   color: #64748b;
+  text-transform: uppercase;
+}
+
+/* Fila de Estadísticas de los 4 Criterios */
+.agent-algo-stats-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
-  margin-top: 2px;
+  padding-top: 6px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.algo-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.algo-stat-icon {
+  display: flex;
+  align-items: center;
+}
+
+.algo-stat-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.algo-stat-val {
+  font-weight: 700;
+  color: #1e293b;
 }
 
 .workload-text b {
