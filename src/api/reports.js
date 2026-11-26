@@ -14,3 +14,13 @@ export const exportReport = (format, params = {}) =>
 export const getDashboardReport = () => {
   return api.get('/reports/dashboard')
 }
+
+// --- Reporte de Métricas FRT / MTTR (Administrador y Soporte Técnico) ---
+// params: { date_from, date_to, level: 'general'|'technician'|'category', technician_id?, category_id? }
+export const getMetricsOptions = () => api.get('/reports/metrics/options')
+export const getMetricsReport = (params) => api.get('/reports/metrics', { params })
+export const exportMetricsReport = (format, params = {}) =>
+  api.get('/reports/metrics/export', {
+    params: { format, ...params },
+    responseType: 'blob',
+  })

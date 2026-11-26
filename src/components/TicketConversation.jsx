@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { Button } from 'primereact/button'
-import { IconMail, IconMailCheck, IconMailOff, IconMessages, IconLock, IconSend } from '@tabler/icons-react'
+import { IconMail, IconMailCheck, IconMailDown, IconMailOff, IconMessages, IconLock, IconSend } from '@tabler/icons-react'
 import { isAdmin } from '../utils/permissions.js'
 import './TicketConversation.css'
 
@@ -84,12 +84,18 @@ export default function TicketConversation({ ticket, currentUser, onReply, statu
                     {isSupport ? 'Soporte' : 'Solicitante'}
                   </span>
                   <span className="conv-time">{formatDate(m.fecha_creacion)}</span>
-                  <span
-                    className={`conv-mail ${m.enviado_por_correo ? 'sent' : 'not-sent'}`}
-                    title={m.enviado_por_correo ? 'Enviado por correo' : 'No se envió por correo'}
-                  >
-                    {m.enviado_por_correo ? <IconMailCheck size={14} /> : <IconMailOff size={14} />}
-                  </span>
+                  {m.recibido_por_correo ? (
+                    <span className="conv-mail received" title="Respondido desde el correo">
+                      <IconMailDown size={14} /> <span className="conv-mail-label">vía correo</span>
+                    </span>
+                  ) : (
+                    <span
+                      className={`conv-mail ${m.enviado_por_correo ? 'sent' : 'not-sent'}`}
+                      title={m.enviado_por_correo ? 'Enviado por correo' : 'No se envió por correo'}
+                    >
+                      {m.enviado_por_correo ? <IconMailCheck size={14} /> : <IconMailOff size={14} />}
+                    </span>
+                  )}
                 </div>
                 <div className="conv-body">{m.cuerpo_mensaje}</div>
               </li>
