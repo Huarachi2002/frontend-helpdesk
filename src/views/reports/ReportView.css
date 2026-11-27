@@ -14,7 +14,7 @@
 }
 
 .reports-view .page-title {
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.5px;
@@ -22,7 +22,7 @@
 }
 
 .reports-view .page-subtitle {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--text-muted);
   margin-top: 4px;
 }
@@ -73,7 +73,7 @@
 }
 
 .reports-view .kpi-label {
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -103,7 +103,7 @@
 }
 
 .reports-view .kpi-value {
-  font-size: 26px;
+  font-size: 1.625rem;
   font-weight: 800;
   color: var(--text-main);
   line-height: 1.05;
@@ -122,7 +122,7 @@
 }
 
 .reports-view .kpi-note {
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   color: var(--text-subtle);
 }
 
@@ -159,7 +159,7 @@
   background: transparent;
   color: var(--text-muted);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -228,14 +228,14 @@
 }
 
 .reports-view .chart-title {
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--text-main);
   margin: 0;
 }
 
 .reports-view .chart-subtitle {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-muted);
   margin: 0;
 }
@@ -260,7 +260,7 @@
   border: 1px solid var(--border-default);
   background: var(--surface-app);
   color: var(--text-muted);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -299,7 +299,7 @@
 
 .reports-view .donut-big-num {
   display: block;
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text-main);
   line-height: 1;
@@ -307,7 +307,7 @@
 }
 
 .reports-view .donut-small-lbl {
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: var(--text-subtle);
 }
@@ -350,7 +350,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 0.78125rem;
 }
 
 .reports-view .cat-dot {
@@ -379,7 +379,7 @@
   color: var(--text-muted);
   min-width: 34px;
   text-align: right;
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -407,7 +407,7 @@
   background: var(--color-primary-50);
   border: 1px solid var(--color-primary-200);
   border-radius: 10px;
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   color: var(--color-primary-800);
 }
 
@@ -420,7 +420,7 @@
   border: none;
   background: var(--color-primary-600);
   color: var(--text-inverse);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -439,7 +439,7 @@
 }
 
 .reports-view .date-label {
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 600;
   color: var(--text-body);
 }
@@ -462,7 +462,7 @@
   background: var(--surface-input);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-main);
   outline: none;
   font-family: inherit;
@@ -496,14 +496,14 @@
 }
 
 .reports-view .export-title {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-main);
   margin: 0;
 }
 
 .reports-view .export-subtitle {
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   color: var(--text-muted);
   margin-top: 2px;
 }
@@ -559,7 +559,7 @@
 }
 
 .reports-view .metrics-field-label {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -572,7 +572,7 @@
 }
 
 .reports-view .metrics-dates-sep {
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   color: var(--text-subtle);
 }
 
@@ -584,7 +584,7 @@
 
 .reports-view .metrics-chip {
   padding: 3px 10px;
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 600;
   font-family: inherit;
   color: var(--text-muted);
@@ -620,7 +620,7 @@
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 600;
   font-family: inherit;
   color: var(--text-muted);
@@ -647,7 +647,7 @@
   background: var(--surface-card);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-family: inherit;
   color: var(--text-main);
   outline: none;
@@ -668,7 +668,7 @@
 
 .reports-view .metrics-alert {
   padding: 8px 12px;
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   color: var(--color-danger-700);
   background: var(--color-danger-50);
   border: 1px solid var(--color-danger-200);
@@ -685,7 +685,7 @@
 
 .reports-view .metrics-scope {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   color: var(--text-muted);
 }
 
@@ -706,7 +706,7 @@
   border: 1px solid var(--color-primary-300);
   background: var(--color-primary-50);
   color: var(--color-primary-700);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -735,7 +735,7 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-subtle);
 }
 
@@ -755,12 +755,12 @@
 .reports-view .metrics-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .reports-view .metrics-table th {
   padding: 11px 14px;
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 700;
   text-align: left;
   text-transform: uppercase;
@@ -815,7 +815,7 @@
 }
 
 .reports-view .metrics-range {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--text-subtle);
   margin-top: 2px;
 }
@@ -839,7 +839,7 @@
 }
 
 .reports-view .metrics-pagination-info {
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   color: var(--text-muted);
 }
 
@@ -858,7 +858,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   color: var(--text-muted);
 }
 
@@ -867,7 +867,7 @@
   background: var(--surface-card);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 600;
   font-family: inherit;
   color: var(--text-main);
@@ -890,7 +890,7 @@
   align-items: flex-start;
   gap: 6px;
   margin: 0;
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   line-height: 1.5;
   color: var(--text-subtle);
 }

@@ -55,15 +55,15 @@
 }
 
 .app-shell .brand-title {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.3px;
   color: var(--text-inverse);
 }
 
 .app-shell .brand-subtitle {
-  font-size: 11px;
-  color: var(--color-slate-400);
+  font-size: 0.6875rem;
+  color: var(--sidebar-muted);
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
@@ -145,10 +145,10 @@
 
 .app-shell .nav-section-label {
   padding: 14px 12px 6px;
-  font-size: 10.5px;
+  font-size: 0.65625rem;
   font-weight: 700;
   letter-spacing: 0.8px;
-  color: var(--color-slate-500);
+  color: var(--sidebar-muted);
   text-transform: uppercase;
 }
 
@@ -163,9 +163,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 9.5px 13px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--sidebar-link-text);
-  font-size: 13.5px;
+  font-size: 0.84375rem;
   font-weight: 500;
   transition: all 0.15s ease-in-out;
   position: relative;
@@ -392,17 +392,17 @@
   display: none;
   background: transparent;
   border: none;
-  color: var(--color-slate-700);
+  color: var(--text-body);
   cursor: pointer;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .app-shell .page-context {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13.5px;
+  font-size: 0.84375rem;
 }
 
 .app-shell .context-breadcrumb {
@@ -411,7 +411,7 @@
 }
 
 .app-shell .context-divider {
-  color: var(--color-slate-300);
+  color: var(--border-strong);
 }
 
 .app-shell .context-current {
@@ -422,7 +422,7 @@
 .app-shell .topbar-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 /* Chip de Rol en el Topbar */
@@ -464,8 +464,8 @@
 }
 
 .app-shell .topbar-greeting {
-  font-size: 13px;
-  color: var(--color-slate-600);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
 }
 
 .app-shell .topbar-greeting b {

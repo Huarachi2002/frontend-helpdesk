@@ -1,0 +1,128 @@
+.site-footer {
+  width: 100%;
+  background: var(--footer-bg);
+  border-top: 1px solid var(--footer-border);
+  color: var(--text-muted);
+  font-size: 0.78125rem;
+  margin-top: auto;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.site-footer-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.site-footer-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.site-footer-brand {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.site-footer-dot {
+  color: var(--text-subtle);
+}
+
+.site-footer-theme-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-default);
+  color: var(--text-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.site-footer-counters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page-visit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+  color: var(--color-primary-700);
+  font-size: 0.75rem;
+}
+
+.visit-icon {
+  flex-shrink: 0;
+}
+
+.visit-route-label {
+  font-weight: 600;
+}
+
+.visit-route-path {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.visit-count-value {
+  font-size: 0.84375rem;
+  font-weight: 800;
+  color: var(--text-main);
+  padding: 0 2px;
+}
+
+.visit-count-unit {
+  font-weight: 500;
+}
+
+.site-total-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-default);
+  color: var(--text-body);
+  font-size: 0.72rem;
+}
+
+.site-total-badge strong {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+/* Ajuste en pantalla de Login */
+.site-footer--auth {
+  background: var(--footer-bg);
+  border-top: 1px solid var(--footer-border);
+}
+
+@media (max-width: 768px) {
+  .site-footer-inner {
+    padding: 12px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .visit-route-path {
+    display: none;
+  }
+}

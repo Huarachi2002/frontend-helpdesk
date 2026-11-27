@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { Button } from 'primereact/button'
 import { IconMail, IconMailCheck, IconMailDown, IconMailOff, IconMessages, IconLock, IconSend } from '@tabler/icons-react'
 import { isAdmin } from '../utils/permissions.js'
+import { ticketReplySchema, validateSchema } from '../schemas/index.js'
 import './TicketConversation.css'
 
 const FINAL_STATUSES = ['resolved', 'closed']
@@ -44,15 +45,18 @@ export default function TicketConversation({ ticket, currentUser, onReply, statu
       : ticket?.tecnico_asignado?.name || 'el soporte técnico'
 
   const submit = async (nextStatus = null) => {
-    const text = mensaje.trim()
-    if (text.length < 2) {
-      setError('Escribe el contenido de la respuesta.')
+    const validation = validateSchema(ticketReplySchema, {
+      mensaje,
+      nextStatus,
+    })
+    if (!validation.success) {
+      setError(validation.fieldErrors.mensaje || validation.firstError)
       return
     }
     setError('')
     setSending(true)
     try {
-      await onReply(text, nextStatus)
+      await onReply(validation.data.mensaje, validation.data.nextStatus ?? null)
       setMensaje('')
     } catch (e) {
       setError(e.message || 'No se pudo enviar la respuesta.')
@@ -121,13 +125,17 @@ export default function TicketConversation({ ticket, currentUser, onReply, statu
           </label>
           <textarea
             id="reply-message"
-            className="textarea-field w-full"
+            className={`textarea-field w-full ${error ? 'input-invalid' : ''}`}
             rows={4}
             value={mensaje}
             maxLength={10000}
             disabled={sending || !canReply}
+            aria-invalid={Boolean(error)}
             placeholder="Escribe tu respuesta..."
-            onChange={(e) => setMensaje(e.target.value)}
+            onChange={(e) => {
+              setMensaje(e.target.value)
+              if (error) setError('')
+            }}
           />
           {nextStatusHint && (
             <p className="conv-hint">

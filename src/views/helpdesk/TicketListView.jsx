@@ -29,7 +29,9 @@ import {
 import { useTicketsStore } from '../../stores/ticketsStore.js'
 import { useCategoriesStore } from '../../stores/categoriesStore.js'
 import { useAuthStore } from '../../stores/authStore.js'
+import { useOrgStructureStore } from '../../stores/orgStructureStore.js'
 import { useToast } from '../../context/ToastContext.jsx'
+import { createTicketSchema, validateSchema, extractApiValidationErrors } from '../../schemas/index.js'
 import './TicketListView.css'
 
 const defaultCreateForm = {
@@ -50,6 +52,14 @@ export default function TicketListView() {
   const categories = useCategoriesStore((state) => state.categories)
   const fetchCategories = useCategoriesStore((state) => state.fetchCategories)
 
+  // Niveles de la Estructura Organizacional (filtro de relevamiento)
+  const cargos = useOrgStructureStore((state) => state.cargos)
+  const fetchCargos = useOrgStructureStore((state) => state.fetchCargos)
+  const niveles = useMemo(
+    () => [...new Set(cargos.map((c) => c.nivel))].sort((a, b) => a - b),
+    [cargos]
+  )
+
   const currentUser = useAuthStore((state) => state.user)
   const { showToast } = useToast()
 
@@ -60,6 +70,8 @@ export default function TicketListView() {
     status: '',
     priority: '',
     category_id: '',
+    nivel: '',
+    relevados_a_mi: '',
   })
 
   // Modal para Crear Ticket
@@ -67,6 +79,7 @@ export default function TicketListView() {
   const [createForm, setCreateForm] = useState({ ...defaultCreateForm })
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const hasActiveFilters = useMemo(() => {
     return (
@@ -74,6 +87,8 @@ export default function TicketListView() {
       filters.status !== '' ||
       filters.priority !== '' ||
       filters.category_id !== '' ||
+      filters.nivel !== '' ||
+      filters.relevados_a_mi !== '' ||
       scopeFilter !== 'all'
     )
   }, [filters, scopeFilter])
@@ -85,6 +100,8 @@ export default function TicketListView() {
       if (currentFilters.status) params.status = currentFilters.status
       if (currentFilters.priority) params.priority = currentFilters.priority
       if (currentFilters.category_id) params.category_id = currentFilters.category_id
+      if (currentFilters.nivel) params.nivel = currentFilters.nivel
+      if (currentFilters.relevados_a_mi) params.relevados_a_mi = 1
       fetchTickets(params)
     },
     [fetchTickets, page, filters]
@@ -93,6 +110,7 @@ export default function TicketListView() {
   useEffect(() => {
     loadTickets(page, filters)
     fetchCategories({ all: true }).catch(() => {})
+    fetchCargos().catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -185,7 +203,7 @@ export default function TicketListView() {
   }
 
   const clearFilters = () => {
-    const reset = { search: '', status: '', priority: '', category_id: '' }
+    const reset = { search: '', status: '', priority: '', category_id: '', nivel: '', relevados_a_mi: '' }
     setFilters(reset)
     setScopeFilter('all')
     setPage(1)
@@ -204,29 +222,35 @@ export default function TicketListView() {
       categoria_id: categories.length > 0 ? categories[0].id : '',
     })
     setFormError('')
+    setFieldErrors({})
     setCreateModalOpen(true)
+  }
+
+  const clearFieldError = (field) => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: '' }))
+    }
   }
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault()
-    if (!createForm.asunto.trim()) {
-      setFormError('El asunto de la incidencia es obligatorio.')
-      return
-    }
-    if (!createForm.descripcion.trim()) {
-      setFormError('La descripción del problema es obligatoria.')
+    const validation = validateSchema(createTicketSchema, createForm)
+    if (!validation.success) {
+      setFieldErrors(validation.fieldErrors)
+      setFormError(validation.firstError)
       return
     }
 
     setFormSubmitting(true)
     setFormError('')
+    setFieldErrors({})
 
     try {
       const payload = {
-        asunto: createForm.asunto.trim(),
-        descripcion: createForm.descripcion.trim(),
-        categoria_id: createForm.categoria_id ? Number(createForm.categoria_id) : null,
-        priority: createForm.priority,
+        asunto: validation.data.asunto,
+        descripcion: validation.data.descripcion,
+        categoria_id: validation.data.categoria_id,
+        priority: validation.data.priority,
       }
 
       const res = await createNewTicket(payload)
@@ -239,9 +263,9 @@ export default function TicketListView() {
       setCreateModalOpen(false)
       loadTickets(1, filters)
     } catch (err) {
-      setFormError(
-        err.response?.data?.message || 'Error al procesar la creación del ticket.'
-      )
+      const apiErr = extractApiValidationErrors(err, 'Error al procesar la creación del ticket.')
+      setFieldErrors(apiErr.fieldErrors)
+      setFormError(apiErr.message)
     } finally {
       setFormSubmitting(false)
     }
@@ -561,6 +585,40 @@ export default function TicketListView() {
             </select>
           </div>
 
+          {/* Filtro por Nivel de la Estructura Organizacional */}
+          {niveles.length > 0 && (
+            <div className="filter-item">
+              <span className="filter-label">Nivel:</span>
+              <select
+                name="nivel"
+                value={filters.nivel}
+                className="custom-select"
+                onChange={handleFilterChange}
+              >
+                <option value="">Todos los niveles</option>
+                {niveles.map((n) => (
+                  <option key={n} value={n}>
+                    Nivel {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Filtro de Relevamiento */}
+          <div className="filter-item">
+            <span className="filter-label">Relevamiento:</span>
+            <select
+              name="relevados_a_mi"
+              value={filters.relevados_a_mi}
+              className="custom-select"
+              onChange={handleFilterChange}
+            >
+              <option value="">Todos</option>
+              <option value="1">Relevados / devueltos a mí</option>
+            </select>
+          </div>
+
           {hasActiveFilters && (
             <button type="button" className="btn-clear-filters" onClick={clearFilters}>
               <IconFilterOff size={15} />
@@ -738,6 +796,15 @@ export default function TicketListView() {
                                   {t.tecnico_asignado.asignacion_metricas.score}% afinidad
                                 </span>
                               )}
+                              {t.cargo_actual && (
+                                <span
+                                  className="ticket-level-tag"
+                                  title={`${t.cargo_actual.nombre}${t.nivel_relevamiento > 0 ? ` · relevado ${t.nivel_relevamiento} nivel(es) sobre su asignación original` : ''}`}
+                                >
+                                  Nivel {t.cargo_actual.nivel}
+                                  {t.nivel_relevamiento > 0 && <b> ⇧+{t.nivel_relevamiento}</b>}
+                                </span>
+                              )}
                               {t.pending_reassignment && (
                                 <span
                                   className="pending-reassign-mini-tag"
@@ -839,7 +906,7 @@ export default function TicketListView() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="modal-form-content">
+            <form onSubmit={handleCreateSubmit} className="modal-form-content" noValidate>
               <div className="modal-scrollable-body">
                 {formError && (
                   <div className="form-error-banner">
@@ -854,14 +921,19 @@ export default function TicketListView() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="Ej. Error de sincronización al cargar calificaciones en curso de Biología"
-                    className="field-input"
+                    className={`field-input ${fieldErrors.asunto ? 'input-invalid' : ''}`}
+                    aria-invalid={Boolean(fieldErrors.asunto)}
+                    maxLength={255}
                     value={createForm.asunto}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setCreateForm({ ...createForm, asunto: e.target.value })
-                    }
+                      clearFieldError('asunto')
+                    }}
                   />
+                  {fieldErrors.asunto && (
+                    <span className="field-error-text">{fieldErrors.asunto}</span>
+                  )}
                   <span className="field-hint">
                     Escribe un resumen breve y preciso del problema reportado.
                   </span>
@@ -873,12 +945,13 @@ export default function TicketListView() {
                       Categoría Temática <span className="required-star">*</span>
                     </label>
                     <select
-                      required
-                      className="field-select"
+                      className={`field-select ${fieldErrors.categoria_id ? 'input-invalid' : ''}`}
+                      aria-invalid={Boolean(fieldErrors.categoria_id)}
                       value={createForm.categoria_id}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setCreateForm({ ...createForm, categoria_id: e.target.value })
-                      }
+                        clearFieldError('categoria_id')
+                      }}
                     >
                       <option value="">Selecciona una temática...</option>
                       {categories.map((cat) => (
@@ -887,6 +960,9 @@ export default function TicketListView() {
                         </option>
                       ))}
                     </select>
+                    {fieldErrors.categoria_id && (
+                      <span className="field-error-text">{fieldErrors.categoria_id}</span>
+                    )}
                   </div>
 
                   <div className="form-field">
@@ -894,18 +970,22 @@ export default function TicketListView() {
                       Nivel de Prioridad / SLA <span className="required-star">*</span>
                     </label>
                     <select
-                      required
-                      className="field-select"
+                      className={`field-select ${fieldErrors.priority ? 'input-invalid' : ''}`}
+                      aria-invalid={Boolean(fieldErrors.priority)}
                       value={createForm.priority}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setCreateForm({ ...createForm, priority: e.target.value })
-                      }
+                        clearFieldError('priority')
+                      }}
                     >
                       <option value="low">Baja — 72 horas SLA</option>
                       <option value="medium">Media — 48 horas SLA (Recomendado)</option>
                       <option value="high">Alta — 24 horas SLA</option>
                       <option value="critical">Crítica — 4 horas SLA (Afectación General)</option>
                     </select>
+                    {fieldErrors.priority && (
+                      <span className="field-error-text">{fieldErrors.priority}</span>
+                    )}
                   </div>
                 </div>
 
@@ -915,14 +995,19 @@ export default function TicketListView() {
                   </label>
                   <textarea
                     rows={4}
-                    required
                     placeholder="Describe los pasos para reproducir el fallo, mensajes de error, usuario afectado y contexto relevante..."
-                    className="field-input textarea-field"
+                    className={`field-input textarea-field ${fieldErrors.descripcion ? 'input-invalid' : ''}`}
+                    aria-invalid={Boolean(fieldErrors.descripcion)}
+                    maxLength={5000}
                     value={createForm.descripcion}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setCreateForm({ ...createForm, descripcion: e.target.value })
-                    }
+                      clearFieldError('descripcion')
+                    }}
                   />
+                  {fieldErrors.descripcion && (
+                    <span className="field-error-text">{fieldErrors.descripcion}</span>
+                  )}
                 </div>
               </div>
 

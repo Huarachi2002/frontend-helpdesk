@@ -26,6 +26,7 @@ import { confirmDialog } from 'primereact/confirmdialog'
 import { usePrioritiesStore } from '../../stores/prioritiesStore.js'
 import { useUsersStore } from '../../stores/usersStore.js'
 import { useToast } from '../../context/ToastContext.jsx'
+import { prioritySchema, validateSchema, extractApiValidationErrors } from '../../schemas/index.js'
 import './PrioritiesManagementView.css'
 
 const defaultForm = {
@@ -56,6 +57,7 @@ export default function PrioritiesManagementView() {
   const [isEditing, setIsEditing] = useState(false)
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
   const [formData, setFormData] = useState({ ...defaultForm })
 
   const loadData = useCallback(() => {
@@ -96,6 +98,7 @@ export default function PrioritiesManagementView() {
     setIsEditing(false)
     setFormData({ ...defaultForm, peso_nivel: priorities.length + 1 })
     setFormError('')
+    setFieldErrors({})
     setModalVisible(true)
   }
 
@@ -110,41 +113,31 @@ export default function PrioritiesManagementView() {
       activo: Boolean(p.activo),
     })
     setFormError('')
+    setFieldErrors({})
     setModalVisible(true)
+  }
+
+  const clearFieldError = (field) => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: '' }))
+    }
   }
 
   const handleFormSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.nombre.trim()) {
-      setFormError('El nombre de la prioridad es obligatorio.')
-      return
-    }
-    if (!formData.codigo.trim()) {
-      setFormError('El código identificador (ej: low, high) es obligatorio.')
-      return
-    }
-    if (formData.peso_nivel < 1) {
-      setFormError('El peso o nivel jerárquico debe ser al menos 1.')
-      return
-    }
-    if (formData.sla_horas_resolucion < 1) {
-      setFormError('El tiempo SLA debe ser de al menos 1 hora.')
+    const validation = validateSchema(prioritySchema, formData)
+    if (!validation.success) {
+      setFieldErrors(validation.fieldErrors)
+      setFormError(validation.firstError)
       return
     }
 
     setFormSubmitting(true)
     setFormError('')
+    setFieldErrors({})
 
     try {
-      const payload = {
-        ...formData,
-        nombre: formData.nombre.trim(),
-        codigo: formData.codigo.trim().toLowerCase(),
-        peso_nivel: Number(formData.peso_nivel),
-        sla_horas_resolucion: Number(formData.sla_horas_resolucion),
-      }
-
-      const res = await savePriority(payload)
+      const res = await savePriority(validation.data)
       showToast({
         severity: 'success',
         summary: isEditing ? 'Prioridad Actualizada' : 'Prioridad Creada',
@@ -154,9 +147,12 @@ export default function PrioritiesManagementView() {
 
       setModalVisible(false)
     } catch (err) {
-      setFormError(
-        err.response?.data?.message || 'Error al procesar la solicitud de la prioridad.'
+      const apiErr = extractApiValidationErrors(
+        err,
+        'Error al procesar la solicitud de la prioridad.'
       )
+      setFieldErrors(apiErr.fieldErrors)
+      setFormError(apiErr.message)
     } finally {
       setFormSubmitting(false)
     }
@@ -607,7 +603,7 @@ export default function PrioritiesManagementView() {
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="modal-form-wrap">
+            <form onSubmit={handleFormSubmit} className="modal-form-wrap" noValidate>
               <div className="modal-body">
                 {formError && (
                   <div className="form-alert-error">
@@ -635,12 +631,19 @@ export default function PrioritiesManagementView() {
                     </label>
                     <input
                       type="text"
-                      required
+                      maxLength={50}
                       placeholder="Ej. Crítica, Alta, Media, Baja"
-                      className="input-field"
+                      className={`input-field ${fieldErrors.nombre ? 'input-invalid' : ''}`}
+                      aria-invalid={Boolean(fieldErrors.nombre)}
                       value={formData.nombre}
-                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, nombre: e.target.value })
+                        clearFieldError('nombre')
+                      }}
                     />
+                    {fieldErrors.nombre && (
+                      <span className="field-error-text">{fieldErrors.nombre}</span>
+                    )}
                     <span className="hint-text">Etiqueta mostrada en tickets y reportes.</span>
                   </div>
 
@@ -650,14 +653,19 @@ export default function PrioritiesManagementView() {
                     </label>
                     <input
                       type="text"
-                      required
+                      maxLength={20}
                       placeholder="Ej. critical, high, medium, low"
-                      className="input-field font-mono"
+                      className={`input-field font-mono ${fieldErrors.codigo ? 'input-invalid' : ''}`}
+                      aria-invalid={Boolean(fieldErrors.codigo)}
                       value={formData.codigo}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({ ...formData, codigo: e.target.value.toLowerCase().trim() })
-                      }
+                        clearFieldError('codigo')
+                      }}
                     />
+                    {fieldErrors.codigo && (
+                      <span className="field-error-text">{fieldErrors.codigo}</span>
+                    )}
                     <span className="hint-text">Identificador técnico único en minúsculas.</span>
                   </div>
                 </div>
@@ -669,16 +677,20 @@ export default function PrioritiesManagementView() {
                     </label>
                     <input
                       type="number"
-                      required
                       min={1}
                       max={100}
                       placeholder="Ej. 1, 2, 3, 4"
-                      className="input-field"
+                      className={`input-field ${fieldErrors.peso_nivel ? 'input-invalid' : ''}`}
+                      aria-invalid={Boolean(fieldErrors.peso_nivel)}
                       value={formData.peso_nivel}
-                      onChange={(e) =>
-                        setFormData({ ...formData, peso_nivel: Number(e.target.value) })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, peso_nivel: e.target.value })
+                        clearFieldError('peso_nivel')
+                      }}
                     />
+                    {fieldErrors.peso_nivel && (
+                      <span className="field-error-text">{fieldErrors.peso_nivel}</span>
+                    )}
                     <span className="hint-text">
                       Mayor número = Mayor urgencia de atención en la cola.
                     </span>
@@ -690,20 +702,25 @@ export default function PrioritiesManagementView() {
                     </label>
                     <input
                       type="number"
-                      required
                       min={1}
+                      max={8760}
                       placeholder="Ej. 4, 24, 48, 72"
-                      className="input-field"
+                      className={`input-field ${fieldErrors.sla_horas_resolucion ? 'input-invalid' : ''}`}
+                      aria-invalid={Boolean(fieldErrors.sla_horas_resolucion)}
                       value={formData.sla_horas_resolucion}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({
                           ...formData,
-                          sla_horas_resolucion: Number(e.target.value),
+                          sla_horas_resolucion: e.target.value,
                         })
-                      }
+                        clearFieldError('sla_horas_resolucion')
+                      }}
                     />
+                    {fieldErrors.sla_horas_resolucion && (
+                      <span className="field-error-text">{fieldErrors.sla_horas_resolucion}</span>
+                    )}
                     <span className="hint-text">
-                      Plazo máximo comprometido ({formData.sla_horas_resolucion ? formatSlaDuration(formData.sla_horas_resolucion) : ''}).
+                      Plazo máximo comprometido ({Number(formData.sla_horas_resolucion) > 0 ? formatSlaDuration(Number(formData.sla_horas_resolucion)) : '—'}).
                     </span>
                   </div>
                 </div>

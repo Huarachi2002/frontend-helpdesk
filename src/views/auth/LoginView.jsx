@@ -12,6 +12,9 @@ import {
 } from '@tabler/icons-react'
 import { useAuthStore } from '../../stores/authStore.js'
 import { getDefaultRouteForUser } from '../../utils/permissions.js'
+import { loginSchema, validateSchema, extractApiValidationErrors } from '../../schemas/index.js'
+import AppearanceAccessibilityBar from '../../components/AppearanceAccessibilityBar.jsx'
+import SiteFooter from '../../components/SiteFooter.jsx'
 import './LoginView.css'
 
 export default function LoginView() {
@@ -22,34 +25,58 @@ export default function LoginView() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: '' }))
+    }
   }
 
   const handleLogin = async (e) => {
     e.preventDefault()
+    const validation = validateSchema(loginSchema, form)
+    if (!validation.success) {
+      setFieldErrors(validation.fieldErrors)
+      setError(null)
+      return
+    }
+
     setLoading(true)
     setError(null)
+    setFieldErrors({})
 
     try {
-      const data = await loginUser(form)
+      const data = await loginUser(validation.data)
       const targetRoute = getDefaultRouteForUser(data?.user)
       navigate(targetRoute, { replace: true })
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
+      const apiErr = extractApiValidationErrors(
+        err,
         'Credenciales incorrectas o servidor no disponible.'
       )
+      setFieldErrors(apiErr.fieldErrors)
+      setError(apiErr.message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="login-wrapper">
-      <div className="login-card">
+    <div className="login-page-shell">
+      <a href="#login-main" className="skip-to-content">
+        Saltar al formulario de inicio de sesión
+      </a>
+
+      <header className="login-topbar-controls">
+        <span className="login-topbar-brand">HelpDesk SmartCampus · UAGRM</span>
+        <AppearanceAccessibilityBar variant="floating" />
+      </header>
+
+      <main id="login-main" className="login-wrapper">
+        <div className="login-card">
         <div className="login-brand">
           <div className="brand-avatar">
             <IconHeadset size={28} strokeWidth={2} />
@@ -60,7 +87,7 @@ export default function LoginView() {
           </p>
         </div>
 
-        <form className="login-form" onSubmit={handleLogin}>
+        <form className="login-form" onSubmit={handleLogin} noValidate>
           {/* Error Alert */}
           {error && (
             <div className="login-error-alert">
@@ -80,14 +107,17 @@ export default function LoginView() {
                 id="email-input"
                 name="email"
                 type="email"
-                className="field-input"
+                className={`field-input ${fieldErrors.email ? 'input-invalid' : ''}`}
                 placeholder="admin@helpdesk.com"
-                required
                 autoComplete="email"
+                aria-invalid={Boolean(fieldErrors.email)}
                 value={form.email}
                 onChange={handleChange}
               />
             </div>
+            {fieldErrors.email && (
+              <span className="field-error-text">{fieldErrors.email}</span>
+            )}
           </div>
 
           {/* Campo Contraseña */}
@@ -101,10 +131,10 @@ export default function LoginView() {
                 id="password-input"
                 name="password"
                 type={showPassword ? 'text' : 'password'}
-                className="field-input"
+                className={`field-input ${fieldErrors.password ? 'input-invalid' : ''}`}
                 placeholder="••••••••"
-                required
                 autoComplete="current-password"
+                aria-invalid={Boolean(fieldErrors.password)}
                 value={form.password}
                 onChange={handleChange}
               />
@@ -118,6 +148,9 @@ export default function LoginView() {
                 {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
               </button>
             </div>
+            {fieldErrors.password && (
+              <span className="field-error-text">{fieldErrors.password}</span>
+            )}
           </div>
 
           {/* Botón Ingresar */}
@@ -134,7 +167,10 @@ export default function LoginView() {
         <div className="login-footer">
           <span>Sistema Integrado Helpdesk & Moodle</span>
         </div>
-      </div>
+        </div>
+      </main>
+
+      <SiteFooter variant="auth" />
     </div>
   )
 }

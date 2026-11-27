@@ -21,7 +21,7 @@
 }
 
 .bot-history-view .page-title {
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.5px;
@@ -34,14 +34,14 @@
   gap: 6px;
   background: var(--color-purple-100);
   color: var(--color-purple-600);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 20px;
 }
 
 .bot-history-view .page-subtitle {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--text-muted);
   margin-top: 4px;
 }
@@ -66,7 +66,7 @@
 }
 
 .bot-history-view .filter-label {
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -76,7 +76,7 @@
   background: var(--surface-input);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-main);
   outline: none;
   cursor: pointer;
@@ -98,7 +98,7 @@
   background: var(--surface-input);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-main);
   outline: none;
   font-family: inherit;
@@ -127,9 +127,9 @@
 .bot-history-view .bot-table th {
   background: var(--surface-app);
   padding: 14px 18px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--color-slate-600);
+  color: var(--text-body);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid var(--border-default);
@@ -156,7 +156,7 @@
 
 .bot-history-view .table-row td {
   padding: 14px 18px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-body);
   vertical-align: middle;
 }
@@ -171,7 +171,7 @@
   color: var(--text-main);
   padding: 4px 8px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .bot-history-view .cell-query,
@@ -203,7 +203,7 @@
 }
 
 .bot-history-view .cell-intent {
-  font-size: 12.5px;
+  font-size: 0.78125rem;
 }
 
 .bot-history-view .intent-pill {
@@ -213,7 +213,7 @@
   padding: 4px 10px;
   border-radius: 6px;
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   white-space: nowrap;
 }
 
@@ -225,16 +225,16 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-slate-600);
+  color: var(--text-body);
   background: var(--surface-app);
   padding: 4px 10px;
   border-radius: 6px;
 }
 
 .bot-history-view .cell-date {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -285,14 +285,14 @@
 }
 
 .bot-history-view .empty-title {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-main);
   margin: 0 0 6px;
 }
 
 .bot-history-view .empty-desc {
-  font-size: 13.5px;
+  font-size: 0.84375rem;
   color: var(--text-muted);
   max-width: 400px;
   margin: 0 0 20px;
@@ -311,7 +311,7 @@
 }
 
 .bot-history-view .pagination-info {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-muted);
 }
 
@@ -342,7 +342,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 12.5px;
+  font-size: 0.78125rem;
 }
 
 .bot-detail-meta-chip {
@@ -380,7 +380,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 700;
 }
 
@@ -388,13 +388,13 @@
 .bubble-bot-badge { color: var(--color-purple-700); }
 
 .bubble-time {
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   color: var(--text-subtle);
   font-family: var(--font-mono, monospace);
 }
 
 .bubble-text {
-  font-size: 13.5px;
+  font-size: 0.84375rem;
   line-height: 1.6;
   color: var(--text-main);
   white-space: pre-wrap;
@@ -416,13 +416,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-body);
 }
 
 .intent-tag-lg {
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 700;
   color: var(--color-purple-700);
   background: var(--color-purple-50);

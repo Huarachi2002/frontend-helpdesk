@@ -14,6 +14,8 @@ import { getNavigationForUser, getRouteContext } from '../config/navigation.js'
 import { getRoleMeta, isAdmin } from '../utils/permissions.js'
 import NotificationBell from '../components/NotificationBell.jsx'
 import GlobalSearch from '../components/GlobalSearch.jsx'
+import AppearanceAccessibilityBar from '../components/AppearanceAccessibilityBar.jsx'
+import SiteFooter from '../components/SiteFooter.jsx'
 import './AppLayout.css'
 
 export default function AppLayout() {
@@ -56,6 +58,10 @@ export default function AppLayout() {
 
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-to-content">
+        Saltar al contenido principal
+      </a>
+
       {/* Overlay móvil para sidebar */}
       {mobileMenuOpen && (
         <div className="sidebar-backdrop" onClick={closeMobileMenu} />
@@ -176,6 +182,9 @@ export default function AppLayout() {
           <GlobalSearch />
 
           <div className="topbar-right">
+            {/* Selector de Temas, Modo Día/Noche y Accesibilidad WCAG */}
+            <AppearanceAccessibilityBar variant="topbar" />
+
             {/* Bandeja de Notificaciones In-App */}
             <NotificationBell />
 
@@ -188,9 +197,12 @@ export default function AppLayout() {
         </header>
 
         {/* Vista activa */}
-        <main className="page-content">
+        <main id="main-content" className="page-content">
           <Outlet />
         </main>
+
+        {/* Pie de página global con contador de accesos por vista */}
+        <SiteFooter variant="app" />
       </div>
     </div>
   )

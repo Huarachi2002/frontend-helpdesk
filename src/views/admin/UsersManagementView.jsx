@@ -28,6 +28,7 @@ import {
   IconUserCheck,
   IconUserX,
   IconTicket,
+  IconSitemap,
 } from '@tabler/icons-react'
 import { Button } from 'primereact/button'
 import { Tag } from 'primereact/tag'
@@ -35,11 +36,14 @@ import { Skeleton } from 'primereact/skeleton'
 import { confirmDialog } from 'primereact/confirmdialog'
 import { useUsersStore } from '../../stores/usersStore.js'
 import { useAuthStore } from '../../stores/authStore.js'
+import { useOrgStructureStore } from '../../stores/orgStructureStore.js'
 import { useToast } from '../../context/ToastContext.jsx'
+import { createUserSchema, validateSchema, extractApiValidationErrors } from '../../schemas/index.js'
 import './UsersManagementView.css'
 
 const defaultForm = {
   id: null,
+  ci: '',
   nombre: '',
   apellido: '',
   correo: '',
@@ -50,7 +54,9 @@ const defaultForm = {
   is_active: true,
   allowed_priorities: ['medium', 'high', 'critical'],
   category_ids: [],
+  cargo_codigo: '',
 }
+
 
 export default function UsersManagementView() {
   const users = useUsersStore((state) => state.users)
@@ -58,6 +64,8 @@ export default function UsersManagementView() {
   const categories = useUsersStore((state) => state.categories)
   const loading = useUsersStore((state) => state.loading)
   const error = useUsersStore((state) => state.error)
+  const cargos = useOrgStructureStore((state) => state.cargos)
+  const fetchCargos = useOrgStructureStore((state) => state.fetchCargos)
   const fetchUsers = useUsersStore((state) => state.fetchUsers)
   const fetchCategories = useUsersStore((state) => state.fetchCategories)
   const saveUser = useUsersStore((state) => state.saveUser)
@@ -81,6 +89,7 @@ export default function UsersManagementView() {
   const [activeTab, setActiveTab] = useState('account')
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
   const [formData, setFormData] = useState({ ...defaultForm })
   const [showPassword, setShowPassword] = useState(false)
   const [modalCatSearch, setModalCatSearch] = useState('')
@@ -164,8 +173,10 @@ export default function UsersManagementView() {
 
   const openCreateModal = () => {
     fetchCategories().catch(() => {})
+    fetchCargos().catch(() => {})
     setIsEditing(false)
     setFormError('')
+    setFieldErrors({})
     setActiveTab('account')
     setShowPassword(false)
     setModalCatSearch('')
@@ -178,8 +189,10 @@ export default function UsersManagementView() {
 
   const openEditModal = (u) => {
     fetchCategories().catch(() => {})
+    fetchCargos().catch(() => {})
     setIsEditing(true)
     setFormError('')
+    setFieldErrors({})
     setActiveTab('account')
     setShowPassword(false)
     setModalCatSearch('')
@@ -197,7 +210,8 @@ export default function UsersManagementView() {
       : u.support_agent?.categories ? u.support_agent.categories.map((c) => c.id) : []
 
     setFormData({
-      id: u.id,
+      id: u.ci || u.id,
+      ci: u.ci || u.id || '',
       nombre: u.nombre || (u.name ? u.name.split(' ')[0] : ''),
       apellido: u.apellido || (u.name ? u.name.split(' ').slice(1).join(' ') : ''),
       correo: u.correo || u.email || '',
@@ -208,6 +222,7 @@ export default function UsersManagementView() {
       is_active: Boolean(u.activo ?? u.is_active ?? true),
       allowed_priorities: prioCodes,
       category_ids: catIds,
+      cargo_codigo: u.cargo_codigo || '',
     })
 
     setModalVisible(true)
@@ -224,7 +239,12 @@ export default function UsersManagementView() {
       ...prev,
       role: nextRole,
       sesion: isInternal, // Habilitar sesión web por defecto para roles internos
+      cargo_codigo: isInternal ? prev.cargo_codigo : '', // Solo el personal ocupa un cargo
     }))
+    clearFieldError('role')
+    if (!isInternal) {
+      clearFieldError('cargo_codigo')
+    }
   }
 
   const selectAllCategories = () => {
@@ -254,40 +274,51 @@ export default function UsersManagementView() {
     })
   }
 
+  const clearFieldError = (field) => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: '' }))
+    }
+  }
+
   const submitForm = async (e) => {
     e.preventDefault()
-    if (!formData.nombre.trim()) {
-      setFormError('El nombre del usuario es obligatorio.')
-      setActiveTab('account')
-      return
-    }
-    if (!formData.correo.trim()) {
-      setFormError('El correo electrónico institucional es obligatorio.')
-      setActiveTab('account')
+    const schema = createUserSchema({ isEditing })
+    const validation = validateSchema(schema, formData)
+    if (!validation.success) {
+      setFieldErrors(validation.fieldErrors)
+      setFormError(validation.firstError)
+      const accountFields = ['nombre', 'apellido', 'correo', 'password', 'role', 'moodle_user_id', 'cargo_codigo']
+      if (accountFields.some((f) => validation.fieldErrors[f])) {
+        setActiveTab('account')
+      }
       return
     }
 
     setFormSubmitting(true)
     setFormError('')
+    setFieldErrors({})
 
     try {
+      const parsed = validation.data
       const payload = {
-        id: formData.id,
-        nombre: formData.nombre.trim(),
-        apellido: formData.apellido ? formData.apellido.trim() : null,
-        name: `${formData.nombre.trim()} ${formData.apellido ? formData.apellido.trim() : ''}`.trim(),
-        correo: formData.correo.trim(),
-        email: formData.correo.trim(),
-        role: formData.role,
-        sesion: formData.sesion,
-        moodle_user_id: formData.moodle_user_id ? Number(formData.moodle_user_id) : null,
-        is_active: formData.is_active,
-        allowed_priorities: formData.allowed_priorities,
-        category_ids: formData.category_ids,
+        id: parsed.id ?? null,
+        ci: parsed.ci,
+        nombre: parsed.nombre,
+        apellido: parsed.apellido || null,
+        name: `${parsed.nombre} ${parsed.apellido || ''}`.trim(),
+        correo: parsed.correo,
+        email: parsed.correo,
+        role: parsed.role,
+        sesion: parsed.sesion,
+        moodle_user_id: parsed.moodle_user_id,
+        is_active: parsed.is_active,
+        allowed_priorities: parsed.allowed_priorities,
+        category_ids: parsed.category_ids,
+        cargo_codigo: inInternalRole(parsed.role) ? parsed.cargo_codigo || null : null,
       }
 
-      if (formData.password) {
-        payload.password = formData.password
+      if (parsed.password) {
+        payload.password = parsed.password
       }
 
       const res = await saveUser(payload)
@@ -300,9 +331,12 @@ export default function UsersManagementView() {
       closeModal()
       loadUsers(page, filters)
     } catch (err) {
-      setFormError(
-        err.response?.data?.message || 'Error al guardar el usuario en el sistema.'
-      )
+      const apiErr = extractApiValidationErrors(err, 'Error al guardar el usuario en el sistema.')
+      if (apiErr.fieldErrors.email && !apiErr.fieldErrors.correo) {
+        apiErr.fieldErrors.correo = apiErr.fieldErrors.email
+      }
+      setFieldErrors(apiErr.fieldErrors)
+      setFormError(apiErr.message)
     } finally {
       setFormSubmitting(false)
     }
@@ -697,7 +731,9 @@ export default function UsersManagementView() {
                                 </span>
                               )}
                             </div>
-                            <span className="user-email">{u.correo || u.email}</span>
+                            <span className="user-email">
+                              {u.ci ? `CI: ${u.ci} · ` : ''}{u.correo || u.email}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -708,6 +744,19 @@ export default function UsersManagementView() {
                           <span className={`role-badge role-${rolNombre.toLowerCase()}`}>
                             {formatRole(rolNombre)}
                           </span>
+                          {isInterno && (
+                            u.cargo ? (
+                              <span className="cargo-line" title={`${u.cargo.codigo} · ${u.cargo.seccion}`}>
+                                <IconSitemap size={12} />
+                                <span>{u.cargo.nombre}</span>
+                              </span>
+                            ) : (
+                              <span className="cargo-line is-missing" title="Asigna un cargo en la Estructura Organizacional">
+                                <IconAlertCircle size={12} />
+                                <span>Sin cargo asignado</span>
+                              </span>
+                            )
+                          )}
                           <span className={`badge-sesion ${isInterno ? 'internal' : 'external'}`}>
                             {isInterno ? (
                               <>
@@ -923,7 +972,7 @@ export default function UsersManagementView() {
               </button>
             </div>
 
-            <form onSubmit={submitForm} className="modal-form-content">
+            <form onSubmit={submitForm} className="modal-form-content" noValidate>
               {/* Pestañas de Navegación del Modal */}
               <div className="modal-nav-tabs">
                 <button
@@ -973,6 +1022,27 @@ export default function UsersManagementView() {
                 {/* TAB 1: DATOS DE CUENTA */}
                 {activeTab === 'account' && (
                   <div className="tab-section">
+                    <div className="form-field mb-3">
+                      <label className="field-label">
+                        Cédula de Identidad (CI) <span className="required-star">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={30}
+                        placeholder="Ej. 1000011 o 8451234-1A"
+                        className={`field-input ${fieldErrors.ci ? 'input-invalid' : ''}`}
+                        aria-invalid={Boolean(fieldErrors.ci)}
+                        value={formData.ci}
+                        onChange={(e) => {
+                          setFormData({ ...formData, ci: e.target.value })
+                          clearFieldError('ci')
+                        }}
+                      />
+                      {fieldErrors.ci && (
+                        <span className="field-error-text">{fieldErrors.ci}</span>
+                      )}
+                    </div>
+
                     <div className="form-grid-2">
                       <div className="form-field">
                         <label className="field-label">
@@ -980,27 +1050,38 @@ export default function UsersManagementView() {
                         </label>
                         <input
                           type="text"
-                          required
+                          maxLength={100}
                           placeholder="Ej. Carlos Fernando"
-                          className="field-input"
+                          className={`field-input ${fieldErrors.nombre ? 'input-invalid' : ''}`}
+                          aria-invalid={Boolean(fieldErrors.nombre)}
                           value={formData.nombre}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setFormData({ ...formData, nombre: e.target.value })
-                          }
+                            clearFieldError('nombre')
+                          }}
                         />
+                        {fieldErrors.nombre && (
+                          <span className="field-error-text">{fieldErrors.nombre}</span>
+                        )}
                       </div>
 
                       <div className="form-field">
                         <label className="field-label">Apellidos</label>
                         <input
                           type="text"
+                          maxLength={100}
                           placeholder="Ej. Morales Vega"
-                          className="field-input"
+                          className={`field-input ${fieldErrors.apellido ? 'input-invalid' : ''}`}
+                          aria-invalid={Boolean(fieldErrors.apellido)}
                           value={formData.apellido}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setFormData({ ...formData, apellido: e.target.value })
-                          }
+                            clearFieldError('apellido')
+                          }}
                         />
+                        {fieldErrors.apellido && (
+                          <span className="field-error-text">{fieldErrors.apellido}</span>
+                        )}
                       </div>
                     </div>
 
@@ -1011,14 +1092,19 @@ export default function UsersManagementView() {
                         </label>
                         <input
                           type="email"
-                          required
+                          maxLength={150}
                           placeholder="usuario@campus.edu"
-                          className="field-input"
+                          className={`field-input ${fieldErrors.correo ? 'input-invalid' : ''}`}
+                          aria-invalid={Boolean(fieldErrors.correo)}
                           value={formData.correo}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setFormData({ ...formData, correo: e.target.value })
-                          }
+                            clearFieldError('correo')
+                          }}
                         />
+                        {fieldErrors.correo && (
+                          <span className="field-error-text">{fieldErrors.correo}</span>
+                        )}
                       </div>
 
                       <div className="form-field">
@@ -1028,13 +1114,14 @@ export default function UsersManagementView() {
                         <div className="password-input-wrap">
                           <input
                             type={showPassword ? 'text' : 'password'}
-                            required={!isEditing && inInternalRole(formData.role)}
                             placeholder={isEditing ? 'Sin cambios (dejar vacío)' : 'Mínimo 6 caracteres'}
-                            className="field-input pr-10"
+                            className={`field-input pr-10 ${fieldErrors.password ? 'input-invalid' : ''}`}
+                            aria-invalid={Boolean(fieldErrors.password)}
                             value={formData.password}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setFormData({ ...formData, password: e.target.value })
-                            }
+                              clearFieldError('password')
+                            }}
                           />
                           <button
                             type="button"
@@ -1045,6 +1132,9 @@ export default function UsersManagementView() {
                             {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
                           </button>
                         </div>
+                        {fieldErrors.password && (
+                          <span className="field-error-text">{fieldErrors.password}</span>
+                        )}
                       </div>
                     </div>
 
@@ -1054,8 +1144,8 @@ export default function UsersManagementView() {
                           Rol Institucional <span className="required-star">*</span>
                         </label>
                         <select
-                          required
-                          className="field-select"
+                          className={`field-select ${fieldErrors.role ? 'input-invalid' : ''}`}
+                          aria-invalid={Boolean(fieldErrors.role)}
                           value={formData.role}
                           onChange={handleRoleChange}
                         >
@@ -1065,6 +1155,9 @@ export default function UsersManagementView() {
                           <option value="ESTUDIANTE">ESTUDIANTE — Alumno Matriculado (Externo)</option>
                           <option value="VISITANTE">VISITANTE — Visitante Externo / Comunidad</option>
                         </select>
+                        {fieldErrors.role && (
+                          <span className="field-error-text">{fieldErrors.role}</span>
+                        )}
                         <span className="field-hint">
                           Define el nivel de acceso en la plataforma y el flujo de asignación.
                         </span>
@@ -1076,18 +1169,62 @@ export default function UsersManagementView() {
                         </label>
                         <input
                           type="number"
+                          min={1}
                           placeholder="Ej. 1042 (Vacío si no está en Moodle)"
-                          className="field-input"
+                          className={`field-input ${fieldErrors.moodle_user_id ? 'input-invalid' : ''}`}
+                          aria-invalid={Boolean(fieldErrors.moodle_user_id)}
                           value={formData.moodle_user_id}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setFormData({ ...formData, moodle_user_id: e.target.value })
-                          }
+                            clearFieldError('moodle_user_id')
+                          }}
                         />
+                        {fieldErrors.moodle_user_id && (
+                          <span className="field-error-text">{fieldErrors.moodle_user_id}</span>
+                        )}
                         <span className="field-hint">
                           Enlaza la cuenta con la base de datos de usuarios de la plataforma académica.
                         </span>
                       </div>
                     </div>
+
+                    {inInternalRole(formData.role) && (
+                      <div className="form-field mt-3">
+                        <label className="field-label">
+                          Cargo en la Estructura Organizacional <span className="required-star">*</span>
+                        </label>
+                        <select
+                          className={`field-select ${fieldErrors.cargo_codigo ? 'input-invalid' : ''}`}
+                          aria-invalid={Boolean(fieldErrors.cargo_codigo)}
+                          value={formData.cargo_codigo}
+                          onChange={(e) => {
+                            setFormData({ ...formData, cargo_codigo: e.target.value })
+                            clearFieldError('cargo_codigo')
+                          }}
+                        >
+                          <option value="">— Selecciona un cargo —</option>
+                          {[...new Set(cargos.map((c) => c.nivel))].sort((a, b) => a - b).map((nivel) => {
+                            const options = cargos.filter((c) => c.nivel === nivel && c.activo)
+                            if (options.length === 0) return null
+                            return (
+                              <optgroup key={nivel} label={`Nivel ${nivel}`}>
+                                {options.map((c) => (
+                                  <option key={c.codigo} value={c.codigo}>
+                                    {c.codigo} — {c.nombre}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )
+                          })}
+                        </select>
+                        {fieldErrors.cargo_codigo && (
+                          <span className="field-error-text">{fieldErrors.cargo_codigo}</span>
+                        )}
+                        <span className="field-hint">
+                          Define el nivel jerárquico del usuario para el relevamiento de tickets. Sugerido: Jefe/a y Coordinadores como DIRECTOR; cargos operativos como TECNICO.
+                        </span>
+                      </div>
+                    )}
 
                     {/* Cards de Configuración de Acceso y Sesión */}
                     <div className="access-cards-group mt-4">

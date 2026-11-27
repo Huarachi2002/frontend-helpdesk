@@ -13,7 +13,11 @@ import 'primeicons/primeicons.css'
 import './styles/theme.css'
 import './style.css'
 
+import { initAppearance } from './stores/appearanceStore.js'
 import App from './App.jsx'
+
+// Aplicar tema, modo Día/Noche (auto/manual) y preferencias WCAG antes del primer render
+initAppearance()
 
 const rootElement = document.getElementById('root') || document.getElementById('app')
 

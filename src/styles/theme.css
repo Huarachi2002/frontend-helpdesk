@@ -1,16 +1,45 @@
 /**
  * ==============================================================================
- * HELPDESK CAMPUS - DESIGN SYSTEM & COLOR PALETTE
+ * HELPDESK SMARTCAMPUS — SISTEMA DE DISEÑO UNIFICADO
  * ==============================================================================
- * Archivo centralizado de tokens de color y estilos para la plataforma Helpdesk.
- * Diseñado para ser reutilizable, modular y fácilmente compartible con otros
- * desarrolladores o interfaces satélite del campus.
+ * Soporta:
+ *  - 3 Temas dinámicos por segmento:
+ *      [data-theme="adults"] -> Adultos (Institucional / Corporativo UAGRM)
+ *      [data-theme="youth"]  -> Jóvenes (Moderno / Dinámico Campus Tech)
+ *      [data-theme="kids"]   -> Niños (Lúdico / Amigable y Redondeado)
+ *  - Modo Día / Noche (automático por horario o manual):
+ *      [data-mode="day"] | [data-mode="night"]
+ *  - Accesibilidad WCAG 2.1:
+ *      [data-contrast="high"] (Alto contraste AA/AAA)
+ *      --font-scale (0.85 a 1.50 aplicado al tamaño raíz)
  * ==============================================================================
  */
 
 :root {
+  /* Escala tipográfica accesible (controlada desde appearanceStore) */
+  --font-scale: 1;
+
+  /* Tipografías base (Adultos por defecto) */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Radios y geometría unificados */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+
+  /* Sombras del sistema */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
+
   /* ----------------------------------------------------------------------------
-   * 1. PALETA PRIMITIVA (Escalas de Color Base)
+   * 1. PALETA PRIMITIVA (Base Adultos / Institucional)
    * ---------------------------------------------------------------------------- */
 
   /* Azul Corporativo / Brand */
@@ -25,7 +54,7 @@
   --color-primary-800: #075985;
   --color-primary-900: #0c4a6e;
 
-  /* Neutros Slate (Superficies, Fondos y Contornos) */
+  /* Neutros Slate */
   --color-slate-50:  #f8fafc;
   --color-slate-100: #f1f5f9;
   --color-slate-200: #e2e8f0;
@@ -38,7 +67,7 @@
   --color-slate-900: #0f172a;
   --color-slate-950: #090e17;
 
-  /* Éxito / Esmeralda (Resuelto, En línea, Activo) */
+  /* Éxito / Esmeralda */
   --color-success-50:  #ecfdf5;
   --color-success-100: #d1fae5;
   --color-success-200: #a7f3d0;
@@ -49,7 +78,7 @@
   --color-success-700: #047857;
   --color-success-800: #065f46;
 
-  /* Alerta / Ámbar (En Proceso, Tiempos, Advertencias) */
+  /* Alerta / Ámbar */
   --color-warning-50:  #fffbeb;
   --color-warning-100: #fef3c7;
   --color-warning-200: #fde68a;
@@ -60,7 +89,7 @@
   --color-warning-700: #b45309;
   --color-warning-800: #92400e;
 
-  /* Peligro / Rojo (Crítico, Alta prioridad, Cancelar, Salir) */
+  /* Peligro / Rojo */
   --color-danger-50:  #fef2f2;
   --color-danger-100: #fee2e2;
   --color-danger-200: #fecaca;
@@ -71,7 +100,7 @@
   --color-danger-700: #b91c1c;
   --color-danger-800: #991b1b;
 
-  /* Asistente IA / Púrpura (Bot, NLP, Intenciones) */
+  /* Asistente IA / Púrpura */
   --color-purple-50:  #faf5ff;
   --color-purple-100: #ede9fe;
   --color-purple-200: #e9d5ff;
@@ -82,46 +111,54 @@
   --color-purple-700: #6d28d9;
 
   /* ----------------------------------------------------------------------------
-   * 2. TOKENS SEMÁNTICOS (Uso General en Vistas)
+   * 2. TOKENS SEMÁNTICOS (Modo Día por defecto)
    * ---------------------------------------------------------------------------- */
 
   /* Fondos y Superficies */
-  --surface-app:          var(--color-slate-50);
+  --surface-app:          #f8fafc;
   --surface-card:         #ffffff;
-  --surface-card-hover:   var(--color-slate-50);
-  --surface-muted:        var(--color-slate-100);
-  --surface-input:        var(--color-slate-50);
+  --surface-card-hover:   #f8fafc;
+  --surface-muted:        #f1f5f9;
+  --surface-elevated:     #ffffff;
+  --surface-table-header: #f8fafc;
+  --surface-input:        #f8fafc;
   --surface-input-focus:  #ffffff;
+  --surface-overlay:      rgba(15, 23, 42, 0.58);
 
   /* Tipografía y Textos */
-  --text-main:            var(--color-slate-900);
-  --text-body:            var(--color-slate-700);
-  --text-muted:           var(--color-slate-500);
-  --text-subtle:          var(--color-slate-400);
+  --text-main:            #0f172a;
+  --text-body:            #334155;
+  --text-muted:           #64748b;
+  --text-subtle:          #94a3b8;
   --text-inverse:         #ffffff;
   --text-brand:           var(--color-primary-600);
 
   /* Bordes y Líneas Divisorias */
-  --border-subtle:        var(--color-slate-100);
-  --border-default:       var(--color-slate-200);
-  --border-strong:        var(--color-slate-300);
+  --border-subtle:        #f1f5f9;
+  --border-default:       #e2e8f0;
+  --border-strong:        #cbd5e1;
   --border-focus:         var(--color-primary-600);
-  --focus-ring:           rgba(2, 132, 199, 0.15);
+  --focus-ring:           rgba(2, 132, 199, 0.18);
 
   /* ----------------------------------------------------------------------------
-   * 3. TOKENS DE LAYOUT (Estructura de Navegación)
+   * 3. TOKENS DE LAYOUT (Sidebar, Topbar, Footer, Login)
    * ---------------------------------------------------------------------------- */
-  --sidebar-bg:                  var(--color-slate-900);
-  --sidebar-border:              var(--color-slate-800);
-  --sidebar-link-text:           var(--color-slate-400);
-  --sidebar-link-hover-bg:       rgba(255, 255, 255, 0.05);
+  --sidebar-bg:                  #0f172a;
+  --sidebar-border:              #1e293b;
+  --sidebar-text:                #f1f5f9;
+  --sidebar-muted:               #94a3b8;
+  --sidebar-link-text:           #94a3b8;
+  --sidebar-link-hover-bg:       rgba(255, 255, 255, 0.06);
   --sidebar-link-hover-text:     #f8fafc;
-  --sidebar-link-active-bg:      linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(14, 165, 233, 0.05));
+  --sidebar-link-active-bg:      linear-gradient(90deg, rgba(14, 165, 233, 0.18), rgba(14, 165, 233, 0.05));
   --sidebar-link-active-text:    var(--color-primary-400);
   --sidebar-link-active-bar:     var(--color-primary-400);
-  --sidebar-footer-bg:           var(--color-slate-950);
+  --sidebar-footer-bg:           #090e17;
   --topbar-bg:                   #ffffff;
-  --topbar-border:               var(--color-slate-200);
+  --topbar-border:               #e2e8f0;
+  --footer-bg:                   #ffffff;
+  --footer-border:               #e2e8f0;
+  --login-bg:                    radial-gradient(circle at 50% 20%, #1e293b, #0f172a 70%);
 
   /* ----------------------------------------------------------------------------
    * 4. COMPONENTES Y VISTAS ESPECÍFICAS
@@ -136,8 +173,8 @@
   --status-waiting-text:     var(--color-purple-700);
   --status-resolved-bg:      var(--color-success-100);
   --status-resolved-text:    var(--color-success-800);
-  --status-closed-bg:        var(--color-slate-200);
-  --status-closed-text:      var(--color-slate-600);
+  --status-closed-bg:        var(--surface-muted);
+  --status-closed-text:      var(--text-muted);
 
   /* Prioridades de Incidencia */
   --priority-low-bg:         var(--color-success-100);
@@ -169,7 +206,7 @@
   --bubble-bot-border:       var(--color-purple-200);
   --bubble-bot-badge:        var(--color-purple-600);
 
-  /* Gráficos de Datos (Chart.js / Estadísticas) */
+  /* Gráficos de Datos */
   --chart-primary:   #0284c7;
   --chart-secondary: #6366f1;
   --chart-warning:   #f59e0b;
@@ -178,3 +215,408 @@
   --chart-purple:    #8b5cf6;
 }
 
+/* ==============================================================================
+ * TEMA 1: ADULTOS / INSTITUCIONAL — MODO NOCHE
+ * ============================================================================== */
+:root[data-mode="night"],
+:root[data-theme="adults"][data-mode="night"] {
+  --surface-app:          #0b1120;
+  --surface-card:         #111827;
+  --surface-card-hover:   #1a2438;
+  --surface-muted:        #1e293b;
+  --surface-elevated:     #162033;
+  --surface-table-header: #162033;
+  --surface-input:        #0f172a;
+  --surface-input-focus:  #162033;
+  --surface-overlay:      rgba(2, 6, 23, 0.76);
+
+  --text-main:            #f1f5f9;
+  --text-body:            #cbd5e1;
+  --text-muted:           #94a3b8;
+  --text-subtle:          #64748b;
+  --text-inverse:         #ffffff;
+  --text-brand:           #38bdf8;
+
+  --border-subtle:        #1e293b;
+  --border-default:       #293548;
+  --border-strong:        #3b4a63;
+  --border-focus:         #38bdf8;
+  --focus-ring:           rgba(56, 189, 248, 0.25);
+
+  --sidebar-bg:           #070c18;
+  --sidebar-border:       #1e293b;
+  --sidebar-footer-bg:    #04070f;
+  --topbar-bg:            #0f172a;
+  --topbar-border:        #1e293b;
+  --footer-bg:            #0f172a;
+  --footer-border:        #1e293b;
+  --login-bg:             radial-gradient(circle at 50% 20%, #172554, #030712 72%);
+
+  /* Tintes adaptados para badges y alertas en modo oscuro */
+  --color-primary-50:     rgba(14, 165, 233, 0.14);
+  --color-primary-100:    rgba(14, 165, 233, 0.22);
+  --color-primary-200:    rgba(56, 189, 248, 0.35);
+  --color-primary-700:    #7dd3fc;
+
+  --color-success-50:     rgba(16, 185, 129, 0.14);
+  --color-success-100:    rgba(16, 185, 129, 0.22);
+  --color-success-200:    rgba(52, 211, 153, 0.35);
+  --color-success-700:    #6ee7b7;
+  --color-success-800:    #6ee7b7;
+
+  --color-warning-50:     rgba(245, 158, 11, 0.14);
+  --color-warning-100:    rgba(245, 158, 11, 0.22);
+  --color-warning-200:    rgba(251, 191, 36, 0.35);
+  --color-warning-700:    #fcd34d;
+  --color-warning-800:    #fcd34d;
+
+  --color-danger-50:      rgba(239, 68, 68, 0.14);
+  --color-danger-100:     rgba(239, 68, 68, 0.22);
+  --color-danger-200:     rgba(248, 113, 113, 0.35);
+  --color-danger-700:     #fca5a5;
+
+  --color-purple-50:      rgba(168, 85, 247, 0.14);
+  --color-purple-100:     rgba(168, 85, 247, 0.22);
+  --color-purple-200:     rgba(192, 132, 252, 0.35);
+  --color-purple-700:     #d8b4fe;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 10px -1px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 22px 38px -6px rgba(0, 0, 0, 0.65);
+}
+
+/* ==============================================================================
+ * TEMA 2: JÓVENES / MODERNO (Violeta Eléctrico + Cian + Space Grotesk)
+ * ============================================================================== */
+:root[data-theme="youth"] {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  --color-primary-50:  #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c4b5fd;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-800: #5b21b6;
+  --color-primary-900: #4c1d95;
+
+  --surface-app:          #f6f5ff;
+  --surface-card:         #ffffff;
+  --surface-card-hover:   #faf8ff;
+  --surface-muted:        #ede9fe;
+  --surface-table-header: #f5f3ff;
+  --surface-input:        #faf9ff;
+  --surface-input-focus:  #ffffff;
+
+  --text-main:            #1a103d;
+  --text-body:            #3b2e66;
+  --text-muted:           #6b5f94;
+  --text-subtle:          #968bb8;
+  --text-brand:           #7c3aed;
+
+  --border-subtle:        #ede9fe;
+  --border-default:       #ddd6fe;
+  --border-strong:        #c4b5fd;
+  --border-focus:         #7c3aed;
+  --focus-ring:           rgba(124, 58, 237, 0.22);
+
+  --sidebar-bg:                  linear-gradient(180deg, #1b1138 0%, #120b29 100%);
+  --sidebar-border:              #2c1d59;
+  --sidebar-link-active-bg:      linear-gradient(90deg, rgba(167, 139, 250, 0.24), rgba(6, 182, 212, 0.1));
+  --sidebar-link-active-text:    #c4b5fd;
+  --sidebar-link-active-bar:     #22d3ee;
+  --sidebar-footer-bg:           #0d081f;
+  --topbar-bg:                   #ffffff;
+  --topbar-border:               #e4ddff;
+  --footer-bg:                   #ffffff;
+  --footer-border:               #e4ddff;
+  --login-bg:                    radial-gradient(circle at 25% 20%, #4c1d95, #120b29 62%, #082f49 100%);
+
+  --chart-primary:   #7c3aed;
+  --chart-secondary: #06b6d4;
+  --chart-accent:    #ec4899;
+}
+
+:root[data-theme="youth"][data-mode="night"] {
+  --surface-app:          #0a0b18;
+  --surface-card:         #13152a;
+  --surface-card-hover:   #1b1f3b;
+  --surface-muted:        #1f2342;
+  --surface-elevated:     #191c36;
+  --surface-table-header: #171a33;
+  --surface-input:        #0f1124;
+  --surface-input-focus:  #191c36;
+
+  --text-main:            #f3f1ff;
+  --text-body:            #d1cceb;
+  --text-muted:           #9a93bd;
+  --text-subtle:          #6c658f;
+  --text-brand:           #a78bfa;
+
+  --border-subtle:        #1f2342;
+  --border-default:       #2c3059;
+  --border-strong:        #40467a;
+  --border-focus:         #a78bfa;
+  --focus-ring:           rgba(167, 139, 250, 0.28);
+
+  --sidebar-bg:           linear-gradient(180deg, #100c24 0%, #090714 100%);
+  --sidebar-border:       #231d47;
+  --sidebar-footer-bg:    #06040f;
+  --topbar-bg:            #101226;
+  --topbar-border:        #23274a;
+  --footer-bg:            #101226;
+  --footer-border:        #23274a;
+  --login-bg:             radial-gradient(circle at 30% 20%, #3b0764, #070812 70%);
+
+  --color-primary-50:     rgba(139, 92, 246, 0.15);
+  --color-primary-100:    rgba(139, 92, 246, 0.24);
+  --color-primary-200:    rgba(167, 139, 250, 0.36);
+  --color-primary-600:    #8b5cf6;
+  --color-primary-700:    #c4b5fd;
+}
+
+/* ==============================================================================
+ * TEMA 3: NIÑOS / LÚDICO (Naranja Alegre + Azul Aventura + Nunito Redondeada)
+ * ============================================================================== */
+:root[data-theme="kids"] {
+  --font-sans: 'Nunito', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Nunito', 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+
+  --color-primary-50:  #fff7ed;
+  --color-primary-100: #ffedd5;
+  --color-primary-200: #fed7aa;
+  --color-primary-300: #fdba74;
+  --color-primary-400: #fb923c;
+  --color-primary-500: #f97316;
+  --color-primary-600: #ea580c;
+  --color-primary-700: #c2410c;
+  --color-primary-800: #9a3412;
+  --color-primary-900: #7c2d12;
+
+  --surface-app:          #fffaf2;
+  --surface-card:         #ffffff;
+  --surface-card-hover:   #fff7eb;
+  --surface-muted:        #fef2df;
+  --surface-table-header: #fff4e3;
+  --surface-input:        #fffcf7;
+  --surface-input-focus:  #ffffff;
+
+  --text-main:            #1e293b;
+  --text-body:            #334155;
+  --text-muted:           #64748b;
+  --text-subtle:          #94a3b8;
+  --text-brand:           #ea580c;
+
+  --border-subtle:        #fde8cc;
+  --border-default:       #fbd8b0;
+  --border-strong:        #f5be84;
+  --border-focus:         #f97316;
+  --focus-ring:           rgba(249, 115, 22, 0.24);
+
+  --sidebar-bg:                  linear-gradient(180deg, #1d4ed8 0%, #1e3a8a 100%);
+  --sidebar-border:              #1e40af;
+  --sidebar-link-text:           #dbeafe;
+  --sidebar-link-hover-bg:       rgba(255, 255, 255, 0.14);
+  --sidebar-link-hover-text:     #ffffff;
+  --sidebar-link-active-bg:      linear-gradient(90deg, rgba(251, 146, 60, 0.34), rgba(250, 204, 21, 0.14));
+  --sidebar-link-active-text:    #fde047;
+  --sidebar-link-active-bar:     #fb923c;
+  --sidebar-footer-bg:           #172554;
+  --topbar-bg:                   #ffffff;
+  --topbar-border:               #fbd8b0;
+  --footer-bg:                   #ffffff;
+  --footer-border:               #fbd8b0;
+  --login-bg:                    radial-gradient(circle at 20% 20%, #2563eb, #1e3a8a 55%, #0f766e 100%);
+
+  --chart-primary:   #f97316;
+  --chart-secondary: #14b8a6;
+  --chart-warning:   #eab308;
+  --chart-success:   #22c55e;
+}
+
+:root[data-theme="kids"][data-mode="night"] {
+  --surface-app:          #111738;
+  --surface-card:         #1a224f;
+  --surface-card-hover:   #222c63;
+  --surface-muted:        #24306b;
+  --surface-elevated:     #1f295c;
+  --surface-table-header: #1e2859;
+  --surface-input:        #141b42;
+  --surface-input-focus:  #1f295c;
+
+  --text-main:            #fffbeb;
+  --text-body:            #e2e8f0;
+  --text-muted:           #a5b4fc;
+  --text-subtle:          #818cf8;
+  --text-brand:           #fb923c;
+
+  --border-subtle:        #263270;
+  --border-default:       #33428f;
+  --border-strong:        #4758b0;
+  --border-focus:         #fb923c;
+  --focus-ring:           rgba(251, 146, 60, 0.3);
+
+  --sidebar-bg:           linear-gradient(180deg, #172554 0%, #0f172a 100%);
+  --sidebar-border:       #263473;
+  --sidebar-footer-bg:    #0a0f24;
+  --topbar-bg:            #161e47;
+  --topbar-border:        #2d3b82;
+  --footer-bg:            #161e47;
+  --footer-border:        #2d3b82;
+  --login-bg:             radial-gradient(circle at 50% 20%, #1e3a8a, #0b1029 72%);
+
+  --color-primary-50:     rgba(249, 115, 22, 0.16);
+  --color-primary-100:    rgba(249, 115, 22, 0.25);
+  --color-primary-200:    rgba(251, 146, 60, 0.4);
+  --color-primary-600:    #f97316;
+  --color-primary-700:    #fdba74;
+}
+
+/* ==============================================================================
+ * ACCESIBILIDAD WCAG AAA — ALTO CONTRASTE (Día y Noche)
+ * ============================================================================== */
+:root[data-contrast="high"][data-mode="day"] {
+  --surface-app:          #ffffff;
+  --surface-card:         #ffffff;
+  --surface-card-hover:   #f3f4f6;
+  --surface-muted:        #e5e7eb;
+  --surface-elevated:     #ffffff;
+  --surface-table-header: #e5e7eb;
+  --surface-input:        #ffffff;
+  --surface-input-focus:  #ffffff;
+
+  --text-main:            #000000;
+  --text-body:            #000000;
+  --text-muted:           #1f2937;
+  --text-subtle:          #374151;
+  --text-inverse:         #ffffff;
+  --text-brand:           #003399;
+
+  --color-primary-50:     #e6eeff;
+  --color-primary-100:    #ccdcfc;
+  --color-primary-200:    #003399;
+  --color-primary-500:    #003399;
+  --color-primary-600:    #002b80;
+  --color-primary-700:    #001f5c;
+
+  --color-success-50:     #dcfce7;
+  --color-success-100:    #bbf7d0;
+  --color-success-200:    #14532d;
+  --color-success-600:    #14532d;
+  --color-success-700:    #052e16;
+  --color-success-800:    #052e16;
+
+  --color-warning-50:     #fef9c3;
+  --color-warning-100:    #fef08a;
+  --color-warning-200:    #713f12;
+  --color-warning-600:    #713f12;
+  --color-warning-700:    #422006;
+  --color-warning-800:    #422006;
+
+  --color-danger-50:      #fee2e2;
+  --color-danger-100:     #fecaca;
+  --color-danger-200:     #7f1d1d;
+  --color-danger-600:     #991b1b;
+  --color-danger-700:     #7f1d1d;
+  --color-danger-800:     #7f1d1d;
+
+  --border-subtle:        #000000;
+  --border-default:       #000000;
+  --border-strong:        #000000;
+  --border-focus:         #003399;
+  --focus-ring:           rgba(0, 51, 153, 0.35);
+
+  --sidebar-bg:           #000000;
+  --sidebar-border:       #ffffff;
+  --sidebar-link-text:    #ffffff;
+  --sidebar-link-active-bg: #ffff00;
+  --sidebar-link-active-text: #000000;
+  --sidebar-link-active-bar: #000000;
+  --sidebar-footer-bg:    #000000;
+  --topbar-bg:            #ffffff;
+  --topbar-border:        #000000;
+  --footer-bg:            #ffffff;
+  --footer-border:        #000000;
+  --login-bg:             #000000;
+}
+
+:root[data-contrast="high"][data-mode="night"] {
+  --surface-app:          #000000;
+  --surface-card:         #0a0a0a;
+  --surface-card-hover:   #171717;
+  --surface-muted:        #1a1a1a;
+  --surface-elevated:     #121212;
+  --surface-table-header: #1a1a1a;
+  --surface-input:        #000000;
+  --surface-input-focus:  #121212;
+
+  --text-main:            #ffffff;
+  --text-body:            #ffffff;
+  --text-muted:           #e5e5e5;
+  --text-subtle:          #d4d4d4;
+  --text-inverse:         #000000;
+  --text-brand:           #fde047;
+
+  --color-primary-50:     #1c1900;
+  --color-primary-100:    #2e2800;
+  --color-primary-200:    #fde047;
+  --color-primary-400:    #fde047;
+  --color-primary-500:    #fde047;
+  --color-primary-600:    #facc15;
+  --color-primary-700:    #fef08a;
+
+  --color-success-50:     #052e16;
+  --color-success-100:    #064e3b;
+  --color-success-200:    #4ade80;
+  --color-success-600:    #4ade80;
+  --color-success-700:    #86efac;
+  --color-success-800:    #86efac;
+
+  --color-warning-50:     #2e1a00;
+  --color-warning-100:    #451a03;
+  --color-warning-200:    #fbbf24;
+  --color-warning-600:    #fbbf24;
+  --color-warning-700:    #fde68a;
+  --color-warning-800:    #fde68a;
+
+  --color-danger-50:      #2e0505;
+  --color-danger-100:     #450a0a;
+  --color-danger-200:     #f87171;
+  --color-danger-600:     #f87171;
+  --color-danger-700:     #fecaca;
+  --color-danger-800:     #f87171;
+
+  --border-subtle:        #ffffff;
+  --border-default:       #ffffff;
+  --border-strong:        #ffffff;
+  --border-focus:         #fde047;
+  --focus-ring:           rgba(253, 224, 71, 0.45);
+
+  --sidebar-bg:           #000000;
+  --sidebar-border:       #ffffff;
+  --sidebar-link-text:    #ffffff;
+  --sidebar-link-active-bg: #fde047;
+  --sidebar-link-active-text: #000000;
+  --sidebar-link-active-bar: #000000;
+  --sidebar-footer-bg:    #000000;
+  --topbar-bg:            #000000;
+  --topbar-border:        #ffffff;
+  --footer-bg:            #000000;
+  --footer-border:        #ffffff;
+  --login-bg:             #000000;
+}

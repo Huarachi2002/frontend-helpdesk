@@ -1,0 +1,282 @@
+/* ==========================================================================
+   ESTILOS: OrgStructureView.css
+   Reutiliza la base de CategoriesManagementView.css (encabezado, métricas,
+   tabla, modal y botones) y añade lo propio del organigrama.
+   ========================================================================== */
+
+/* --- Tonos por sección funcional --- */
+.org-view .tone-blue    { --tone-bg: var(--color-primary-50); --tone-border: var(--color-primary-300); --tone-fg: var(--color-primary-700); }
+.org-view .tone-purple  { --tone-bg: var(--color-purple-50); --tone-border: #c4b5fd; --tone-fg: var(--color-purple-700); }
+.org-view .tone-emerald { --tone-bg: var(--color-success-50); --tone-border: #6ee7b7; --tone-fg: var(--color-success-700); }
+.org-view .tone-amber   { --tone-bg: var(--color-warning-50); --tone-border: var(--color-warning-300); --tone-fg: var(--color-warning-700); }
+.org-view .tone-rose    { --tone-bg: var(--color-danger-50); --tone-border: #fda4af; --tone-fg: var(--color-danger-700); }
+.org-view .tone-slate   { --tone-bg: #f8fafc; --tone-border: var(--border-strong); --tone-fg: #475569; }
+
+/* --- Avisos --- */
+.org-warning {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--color-warning-50);
+  border: 1px solid var(--color-warning-200);
+  border-radius: 12px;
+  color: var(--color-warning-800);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.org-warning svg { flex-shrink: 0; margin-top: 2px; }
+.org-warning ul { margin: 0.3rem 0 0.4rem; padding-left: 1.1rem; }
+.org-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-warning-700);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.org-link-btn:hover { text-decoration: underline; }
+
+/* --- Pestañas --- */
+.org-tabs {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.org-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.org-tab:hover { color: var(--text-main); }
+.org-tab.is-active {
+  background: var(--surface-card);
+  color: var(--color-primary-600);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+.org-tab-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: var(--color-danger-500);
+  color: var(--text-inverse);
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Organigrama --- */
+.org-chart-card { padding: 1.25rem; }
+.org-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-body);
+}
+.org-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+.org-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--tone-bg);
+  border: 2px solid var(--tone-border);
+}
+.org-chart-scroll { overflow-x: auto; padding-bottom: 0.5rem; }
+
+.org-view .p-organizationchart .p-organizationchart-node-content {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+.org-view .p-organizationchart .p-organizationchart-line-down { background: var(--border-strong); }
+.org-view .p-organizationchart .p-organizationchart-line-left { border-right-color: var(--border-strong); }
+.org-view .p-organizationchart .p-organizationchart-line-top { border-top-color: var(--border-strong); }
+
+.org-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 190px;
+  padding: 0.75rem 0.7rem 0.7rem;
+  background: var(--tone-bg);
+  border: 1.5px solid var(--tone-border);
+  border-top: 4px solid var(--tone-fg);
+  border-radius: 10px;
+  text-align: center;
+}
+.org-node.is-inactive { opacity: 0.55; border-style: dashed; }
+.org-node-external {
+  position: absolute;
+  top: -1.9rem;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: 9999px;
+  padding: 0.1rem 0.6rem;
+}
+.org-node-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--tone-fg);
+  letter-spacing: 0.02em;
+}
+.org-node-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+.org-node-section { font-size: 0.68rem; color: var(--text-muted); }
+.org-node-vacant { margin-top: 0.4rem; }
+.org-node-inactive {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.org-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-card);
+  border: 1.5px solid var(--tone-border, var(--border-strong));
+  color: var(--tone-fg, var(--text-body));
+  font-size: 0.66rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+.org-avatar.lg {
+  width: 34px;
+  height: 34px;
+  font-size: 0.75rem;
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-200);
+  color: var(--color-primary-700);
+  flex-shrink: 0;
+}
+
+.org-vacant-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  background: var(--color-danger-50);
+  border: 1px solid var(--color-danger-200);
+  color: var(--color-danger-700);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* --- Tabla de cargos --- */
+.org-code-tag {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+}
+.org-section-chip {
+  display: inline-block;
+  padding: 0.18rem 0.6rem;
+  border-radius: 9999px;
+  background: var(--tone-bg);
+  border: 1px solid var(--tone-border);
+  color: var(--tone-fg);
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.org-depends {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+  color: var(--text-body);
+}
+.org-depends small {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.org-depends.external { color: var(--text-muted); font-style: italic; }
+.org-depends.external small { font-style: normal; font-family: inherit; }
+
+.org-level-pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+.org-level-pill.level-1 { background: #0f172a; color: var(--text-inverse); }
+.org-level-pill.level-2 { background: #334155; color: var(--text-inverse); }
+.org-level-pill.level-3 { background: var(--border-default); color: var(--text-body); }
+
+/* --- Asignación de personal --- */
+.org-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  color: var(--text-body);
+  cursor: pointer;
+}
+.org-person { display: flex; align-items: center; gap: 0.65rem; }
+.org-person > div { display: flex; flex-direction: column; }
+.org-person-email { font-size: 0.75rem; color: var(--text-muted); }
+.org-role-pill {
+  display: inline-block;
+  padding: 0.18rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.org-role-pill.is-admin { background: var(--color-primary-50); color: var(--color-primary-700); border: 1px solid var(--color-primary-200); }
+.org-role-pill.is-support { background: var(--color-success-50); color: var(--color-success-700); border: 1px solid var(--color-success-200); }
+
+.org-assign-cell { display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start; }
+.org-assign-select { width: 100%; max-width: 420px; }
+.org-assign-select.is-missing { border-color: #fca5a5; background: var(--color-danger-50); color: var(--color-danger-700); }
+
+/* --- Modal --- */
+.org-form-row { display: flex; gap: 1rem; }
+.org-form-row > .form-group:first-child { flex: 1; }
+.org-form-small { width: 110px; }
+.org-full { width: 100%; }
+
+@media (max-width: 640px) {
+  .org-form-row { flex-direction: column; gap: 0; }
+  .org-form-small { width: 100%; }
+}
+
+.org-hint-block { display: block; margin-top: 0.35rem; }
+.org-view .mt-2 { margin-top: 0.5rem; }

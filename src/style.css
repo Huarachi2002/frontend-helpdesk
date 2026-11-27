@@ -1,16 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import './styles/theme.css';
-
-:root {
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-
-  /* Sombras del sistema */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-}
 
 /* Reset base selectivo que NO destruye el padding de componentes de librería */
 *, *::before, *::after {
@@ -21,22 +10,35 @@ body, h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd {
   margin: 0;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
 ul, ol {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-html, body {
+/* Raíz tipográfica dinámica para accesibilidad (WCAG 1.4.4 Resize Text) */
+html {
+  min-height: 100%;
+  height: 100%;
+  font-size: calc(16px * var(--font-scale, 1));
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body {
   min-height: 100%;
   height: 100%;
   font-family: var(--font-sans);
-  font-size: 14.5px;
+  font-size: 0.90625rem;
   line-height: 1.5;
   color: var(--text-main);
   background-color: var(--surface-app);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #app, #root {
@@ -55,6 +57,63 @@ button, input, select, textarea {
   font-family: inherit;
 }
 
+/* ==============================================================================
+ * ACCESIBILIDAD WCAG 2.1 (Focus visible, Skip link y Alto Contraste)
+ * ============================================================================== */
+.skip-to-content {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  z-index: 9999;
+  padding: 10px 16px;
+  background: var(--color-primary-600);
+  color: var(--text-inverse);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  transition: top 0.15s ease;
+}
+
+.skip-to-content:focus {
+  top: 12px;
+  outline: 3px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+:root[data-contrast="high"] :focus-visible {
+  outline: 3.5px solid var(--border-focus) !important;
+  outline-offset: 2px !important;
+}
+
+:root[data-contrast="high"] a,
+:root[data-contrast="high"] .nav-link {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+:root[data-contrast="high"] button,
+:root[data-contrast="high"] input,
+:root[data-contrast="high"] select,
+:root[data-contrast="high"] textarea,
+:root[data-contrast="high"] .p-button,
+:root[data-contrast="high"] .p-inputtext,
+:root[data-contrast="high"] .p-dropdown {
+  border-width: 2px !important;
+}
+
+:root[data-contrast="high"][data-mode="night"] .p-button:not(.p-button-outlined):not(.p-button-text),
+:root[data-contrast="high"][data-mode="night"] .btn-primary {
+  background: var(--color-primary-600) !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 7px;
@@ -64,11 +123,11 @@ button, input, select, textarea {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-slate-300);
+  background: var(--border-strong);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-slate-400);
+  background: var(--text-muted);
 }
 
 /* Transitions */
@@ -83,8 +142,13 @@ button, input, select, textarea {
 }
 
 /* ==============================================================================
- * AJUSTES GLOBALES DE COMPONENTES PRIMEREACT (PADDING & BORDER-RADIUS)
+ * UNIFICACIÓN GLOBAL DE PRIMEREACT CON EL SISTEMA DE DISEÑO
+ * Garantiza soporte total para 3 Temas × Día/Noche × Alto Contraste × Fuente
  * ============================================================================== */
+
+.p-component {
+  font-family: var(--font-sans) !important;
+}
 
 /* Botones PrimeReact (.p-button) */
 .p-button {
@@ -93,19 +157,30 @@ button, input, select, textarea {
   justify-content: center !important;
   gap: 8px !important;
   padding: 9px 18px !important;
-  border-radius: 8px !important;
-  font-size: 13.5px !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 0.84375rem !important;
   font-weight: 600 !important;
   line-height: 1.2 !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
 }
 
+.p-button:not(.p-button-outlined):not(.p-button-text):not(.p-button-secondary):not(.p-button-success):not(.p-button-warning):not(.p-button-danger):not(.p-button-info):not(.p-button-help) {
+  background: var(--color-primary-600) !important;
+  border-color: var(--color-primary-600) !important;
+  color: var(--text-inverse) !important;
+}
+
+.p-button:not(.p-button-outlined):not(.p-button-text):not(.p-button-secondary):not(.p-button-success):not(.p-button-warning):not(.p-button-danger):not(.p-button-info):not(.p-button-help):hover {
+  background: var(--color-primary-700) !important;
+  border-color: var(--color-primary-700) !important;
+}
+
 .p-button.p-button-sm {
   padding: 7px 14px !important;
-  font-size: 12.5px !important;
+  font-size: 0.78125rem !important;
   gap: 6px !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius-md) !important;
 }
 
 .p-button.p-button-icon-only {
@@ -118,20 +193,171 @@ button, input, select, textarea {
   width: 32px !important;
   height: 32px !important;
   padding: 0 !important;
-  border-radius: 7px !important;
+  border-radius: var(--radius-sm) !important;
 }
 
-/* Botones secundarios y outlined (como "Actualizar", "Ver", etc.) */
 .p-button.p-button-secondary.p-button-outlined {
   background: var(--surface-card) !important;
   border: 1px solid var(--border-strong) !important;
-  color: var(--color-slate-700) !important;
+  color: var(--text-body) !important;
 }
 
 .p-button.p-button-secondary.p-button-outlined:hover {
   background: var(--surface-muted) !important;
-  border-color: var(--color-slate-400) !important;
+  border-color: var(--text-muted) !important;
   color: var(--text-main) !important;
+}
+
+.p-button.p-button-text {
+  color: var(--text-body) !important;
+}
+
+.p-button.p-button-text:hover {
+  background: var(--surface-muted) !important;
+  color: var(--text-main) !important;
+}
+
+/* Inputs, Dropdowns, MultiSelect, Calendar */
+.p-inputtext,
+.p-dropdown,
+.p-multiselect,
+.p-calendar .p-inputtext,
+.p-inputtextarea {
+  background: var(--surface-input) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 0.875rem !important;
+}
+
+.p-inputtext::placeholder,
+.p-inputtextarea::placeholder,
+.p-dropdown-label.p-placeholder,
+.p-multiselect-label.p-placeholder {
+  color: var(--text-subtle) !important;
+}
+
+.p-inputtext:enabled:focus,
+.p-dropdown:not(.p-disabled).p-focus,
+.p-multiselect:not(.p-disabled).p-focus {
+  background: var(--surface-input-focus) !important;
+  border-color: var(--border-focus) !important;
+  box-shadow: 0 0 0 3px var(--focus-ring) !important;
+}
+
+.p-dropdown .p-dropdown-label,
+.p-dropdown .p-dropdown-trigger,
+.p-multiselect .p-multiselect-label,
+.p-multiselect .p-multiselect-trigger {
+  color: var(--text-main) !important;
+}
+
+.p-dropdown-panel,
+.p-multiselect-panel,
+.p-datepicker,
+.p-menu,
+.p-overlaypanel {
+  background: var(--surface-elevated) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.p-dropdown-panel .p-dropdown-header,
+.p-multiselect-panel .p-multiselect-header,
+.p-datepicker .p-datepicker-header {
+  background: var(--surface-table-header) !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid var(--border-default) !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item,
+.p-menu .p-menuitem-link {
+  color: var(--text-body) !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):hover,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item:not(.p-highlight):hover,
+.p-menu .p-menuitem-link:hover {
+  background: var(--surface-muted) !important;
+  color: var(--text-main) !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
+  background: var(--color-primary-100) !important;
+  color: var(--color-primary-700) !important;
+}
+
+/* DataTable & Paginator PrimeReact */
+.p-datatable .p-datatable-header,
+.p-datatable .p-datatable-footer {
+  background: var(--surface-table-header) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-default) !important;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: var(--surface-table-header) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border-default) !important;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+  background: var(--surface-card) !important;
+  color: var(--text-body) !important;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  border-color: var(--border-subtle) !important;
+}
+
+.p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
+  background: var(--surface-card-hover) !important;
+  color: var(--text-main) !important;
+}
+
+.p-paginator {
+  background: var(--surface-card) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border-default) !important;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page,
+.p-paginator .p-paginator-first,
+.p-paginator .p-paginator-prev,
+.p-paginator .p-paginator-next,
+.p-paginator .p-paginator-last {
+  color: var(--text-body) !important;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+  background: var(--color-primary-100) !important;
+  color: var(--color-primary-700) !important;
+}
+
+/* TabView */
+.p-tabview .p-tabview-nav {
+  background: transparent !important;
+  border-color: var(--border-default) !important;
+}
+
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  border-color: transparent !important;
+}
+
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  color: var(--text-brand) !important;
+  border-color: var(--color-primary-600) !important;
+}
+
+.p-tabview .p-tabview-panels {
+  background: transparent !important;
+  color: var(--text-body) !important;
 }
 
 /* Etiquetas / Tags / Pills (.p-tag) */
@@ -141,20 +367,19 @@ button, input, select, textarea {
   justify-content: center !important;
   gap: 5px !important;
   padding: 5px 12px !important;
-  font-size: 12px !important;
+  font-size: 0.75rem !important;
   font-weight: 600 !important;
   line-height: 1.25 !important;
-  border-radius: 6px !important;
+  border-radius: var(--radius-sm) !important;
   border: 1px solid transparent !important;
   white-space: nowrap !important;
 }
 
 .p-tag.p-tag-rounded {
-  border-radius: 20px !important;
+  border-radius: var(--radius-pill) !important;
   padding: 4px 11px !important;
 }
 
-/* Variantes de Tags sincronizadas con el tema del campus */
 .p-tag.p-tag-success {
   background-color: var(--color-success-50) !important;
   color: var(--color-success-700) !important;
@@ -181,7 +406,7 @@ button, input, select, textarea {
 
 .p-tag.p-tag-secondary {
   background-color: var(--surface-muted) !important;
-  color: var(--color-slate-600) !important;
+  color: var(--text-muted) !important;
   border-color: var(--border-default) !important;
 }
 
@@ -193,10 +418,10 @@ button, input, select, textarea {
 
 /* Modales PrimeReact (.p-dialog) */
 .p-dialog {
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
   border: 1px solid var(--border-default) !important;
   background: var(--surface-card) !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18) !important;
+  box-shadow: var(--shadow-xl) !important;
   overflow: hidden !important;
 }
 
@@ -208,9 +433,13 @@ button, input, select, textarea {
 }
 
 .p-dialog .p-dialog-header .p-dialog-title {
-  font-size: 17px !important;
+  font-size: 1.0625rem !important;
   font-weight: 700 !important;
   color: var(--text-main) !important;
+}
+
+.p-dialog .p-dialog-header-icon {
+  color: var(--text-muted) !important;
 }
 
 .p-dialog .p-dialog-content {
@@ -229,8 +458,35 @@ button, input, select, textarea {
   gap: 10px !important;
 }
 
-/* Máscara de fondo modal (.p-dialog-mask) */
 .p-dialog-mask {
-  background-color: rgba(15, 23, 42, 0.6) !important;
+  background-color: var(--surface-overlay) !important;
   backdrop-filter: blur(2px) !important;
+}
+
+/* Toast PrimeReact */
+.p-toast .p-toast-message {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* ==============================================================================
+ * VALIDACIÓN DE FORMULARIOS (ZOD)
+ * ============================================================================== */
+.field-error-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-danger-600);
+  line-height: 1.35;
+}
+
+.input-invalid {
+  border-color: var(--color-danger-600) !important;
+  background-color: var(--color-danger-50) !important;
+}
+
+.input-invalid:focus {
+  border-color: var(--color-danger-600) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18) !important;
 }

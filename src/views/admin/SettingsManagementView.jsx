@@ -20,6 +20,7 @@ import {
 import { useAuthStore } from '../../stores/authStore.js'
 import { isAdmin } from '../../utils/permissions.js'
 import { useToast } from '../../context/ToastContext.jsx'
+import { systemSettingsSchema, validateSchema, extractApiValidationErrors } from '../../schemas/index.js'
 import './SettingsManagementView.css'
 
 export default function SettingsManagementView() {
@@ -32,6 +33,7 @@ export default function SettingsManagementView() {
   const [saving, setSaving] = useState(false)
   const [triggering, setTriggering] = useState(false)
   const [triggerOutput, setTriggerOutput] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
 
   // Configuraciones del sistema y políticas globales
   const [configs, setConfigs] = useState({
@@ -54,6 +56,7 @@ export default function SettingsManagementView() {
     notif_evento_recordatorio_inapp: true,
     notif_evento_sin_respuesta_email: true,
     notif_evento_sin_respuesta_inapp: true,
+    relevamiento_permitir_saltar_niveles: false,
   })
 
   // Catálogo de eventos del sistema para las políticas globales
@@ -111,7 +114,11 @@ export default function SettingsManagementView() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const cfgData = await getConfigurations('notificaciones')
+      const [notifData, relevamientoData] = await Promise.all([
+        getConfigurations('notificaciones'),
+        getConfigurations('relevamiento'),
+      ])
+      const cfgData = [...notifData, ...relevamientoData]
       const cfgMap = { ...configs }
       cfgData.forEach((item) => {
         if (item.tipo === 'integer') {
@@ -141,28 +148,57 @@ export default function SettingsManagementView() {
 
   const handleConfigChange = (key, value) => {
     setConfigs((prev) => ({ ...prev, [key]: value }))
+    if (fieldErrors[key]) {
+      setFieldErrors((prev) => ({ ...prev, [key]: '' }))
+    }
   }
 
   const handleSaveConfigs = async (e) => {
     if (e) e.preventDefault()
+
+    const validation = validateSchema(systemSettingsSchema, configs)
+    if (!validation.success) {
+      setFieldErrors(validation.fieldErrors)
+      const paramFields = [
+        'horas_recordatorio_pendientes',
+        'dias_ticket_sin_respuesta',
+        'correo_remitente_nombre',
+        'correo_remitente_direccion',
+      ]
+      if (paramFields.some((f) => validation.fieldErrors[f])) {
+        setActiveTab('params')
+      }
+      showToast({
+        severity: 'warn',
+        summary: 'Revisa los datos',
+        detail: validation.firstError,
+        life: 4000,
+      })
+      return
+    }
+
+    setFieldErrors({})
     setSaving(true)
     try {
-      const payload = Object.entries(configs).map(([clave, valor]) => ({
+      const payload = Object.entries(validation.data).map(([clave, valor]) => ({
         clave,
         valor: typeof valor === 'boolean' ? (valor ? '1' : '0') : String(valor),
       }))
 
       await updateConfigurations(payload)
+      setConfigs(validation.data)
       showToast({
         severity: 'success',
         summary: 'Configuración guardada',
         detail: 'Los parámetros y políticas institucionales han sido actualizados exitosamente.',
       })
     } catch (err) {
+      const apiErr = extractApiValidationErrors(err, 'No se pudo guardar la configuración.')
+      setFieldErrors(apiErr.fieldErrors)
       showToast({
         severity: 'error',
         summary: 'Error al guardar',
-        detail: err.response?.data?.message || err.message,
+        detail: apiErr.message,
       })
     } finally {
       setSaving(false)
@@ -246,7 +282,7 @@ export default function SettingsManagementView() {
       <div className="settings-content">
         {activeTab === 'params' && (
           <div className="settings-system-grid">
-            <form onSubmit={handleSaveConfigs} className="settings-card">
+            <form onSubmit={handleSaveConfigs} className="settings-card" noValidate>
               <div className="settings-card-header">
                 <h3>Tiempos de Espera & Disparadores SLA</h3>
                 <p>Configura las horas y días límite antes de disparar alertas automáticas.</p>
@@ -265,13 +301,16 @@ export default function SettingsManagementView() {
                     max="168"
                     value={configs.horas_recordatorio_pendientes}
                     onChange={(e) =>
-                      handleConfigChange('horas_recordatorio_pendientes', parseInt(e.target.value, 10) || 1)
+                      handleConfigChange('horas_recordatorio_pendientes', e.target.value)
                     }
-                    className="settings-input"
-                    required
+                    className={`settings-input ${fieldErrors.horas_recordatorio_pendientes ? 'input-invalid' : ''}`}
+                    aria-invalid={Boolean(fieldErrors.horas_recordatorio_pendientes)}
                   />
                   <span className="input-suffix">horas</span>
                 </div>
+                {fieldErrors.horas_recordatorio_pendientes && (
+                  <span className="field-error-text">{fieldErrors.horas_recordatorio_pendientes}</span>
+                )}
                 <small className="settings-helper-text">
                   Si un ticket en estado de Espera o Abierto supera este plazo sin avance, se generará una notificación en plataforma y un correo al técnico responsable y a la Dirección.
                 </small>
@@ -290,13 +329,16 @@ export default function SettingsManagementView() {
                     max="30"
                     value={configs.dias_ticket_sin_respuesta}
                     onChange={(e) =>
-                      handleConfigChange('dias_ticket_sin_respuesta', parseInt(e.target.value, 10) || 1)
+                      handleConfigChange('dias_ticket_sin_respuesta', e.target.value)
                     }
-                    className="settings-input"
-                    required
+                    className={`settings-input ${fieldErrors.dias_ticket_sin_respuesta ? 'input-invalid' : ''}`}
+                    aria-invalid={Boolean(fieldErrors.dias_ticket_sin_respuesta)}
                   />
                   <span className="input-suffix">días</span>
                 </div>
+                {fieldErrors.dias_ticket_sin_respuesta && (
+                  <span className="field-error-text">{fieldErrors.dias_ticket_sin_respuesta}</span>
+                )}
                 <small className="settings-helper-text">
                   Si un ticket nuevo no recibe respuesta técnica en este número de días, el sistema despacha un correo de seguimiento institucional al usuario solicitante.
                 </small>
@@ -373,23 +415,56 @@ export default function SettingsManagementView() {
                   <input
                     id="remitente_nombre"
                     type="text"
+                    maxLength={100}
                     value={configs.correo_remitente_nombre}
                     onChange={(e) => handleConfigChange('correo_remitente_nombre', e.target.value)}
-                    className="settings-input"
-                    required
+                    className={`settings-input ${fieldErrors.correo_remitente_nombre ? 'input-invalid' : ''}`}
+                    aria-invalid={Boolean(fieldErrors.correo_remitente_nombre)}
                   />
+                  {fieldErrors.correo_remitente_nombre && (
+                    <span className="field-error-text">{fieldErrors.correo_remitente_nombre}</span>
+                  )}
                 </div>
                 <div className="settings-form-group">
                   <label htmlFor="remitente_correo">Correo Electrónico Sistema</label>
                   <input
                     id="remitente_correo"
                     type="email"
+                    maxLength={150}
                     value={configs.correo_remitente_direccion}
                     onChange={(e) => handleConfigChange('correo_remitente_direccion', e.target.value)}
-                    className="settings-input"
-                    required
+                    className={`settings-input ${fieldErrors.correo_remitente_direccion ? 'input-invalid' : ''}`}
+                    aria-invalid={Boolean(fieldErrors.correo_remitente_direccion)}
                   />
+                  {fieldErrors.correo_remitente_direccion && (
+                    <span className="field-error-text">{fieldErrors.correo_remitente_direccion}</span>
+                  )}
                 </div>
+              </div>
+
+              <div className="settings-divider" />
+
+              <div className="settings-card-header">
+                <h3>Relevamiento de Tickets</h3>
+                <p>Reglas del movimiento vertical de tickets entre los niveles de la Estructura Organizacional.</p>
+              </div>
+
+              <div className="settings-toggle-row">
+                <div className="toggle-label-box">
+                  <span className="toggle-title">Permitir saltar niveles en el relevamiento</span>
+                  <span className="toggle-desc">
+                    Desactivado: los Técnicos solo pueden relevar al nivel inmediato superior o inferior (secuencial).
+                    Activado: pueden elegir cualquier nivel. Los Administradores siempre pueden saltar niveles.
+                  </span>
+                </div>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(configs.relevamiento_permitir_saltar_niveles)}
+                    onChange={(e) => handleConfigChange('relevamiento_permitir_saltar_niveles', e.target.checked)}
+                  />
+                  <span className="slider round" />
+                </label>
               </div>
 
               <div className="settings-actions">
@@ -483,10 +558,10 @@ export default function SettingsManagementView() {
                     <tr key={evt.id}>
                       <td className="td-label">
                         <span className="pref-event-name">{evt.name}</span>
-                        <span style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                           {evt.desc}
                         </span>
-                        <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 500, marginTop: '4px' }}>
+                        <span style={{ fontSize: '0.6875rem', color: 'var(--text-brand)', fontWeight: 500, marginTop: '4px' }}>
                           Destinatarios: {evt.target}
                         </span>
                       </td>

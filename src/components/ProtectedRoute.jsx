@@ -58,12 +58,12 @@ export function ProtectedRoute({ children, allowedRoles, requiresAdmin = false }
         <div style={{
           width: '32px',
           height: '32px',
-          border: '3px solid #cbd5e1',
-          borderTopColor: '#0284c7',
+          border: '3px solid var(--border-strong, #cbd5e1)',
+          borderTopColor: 'var(--color-primary-600, #0284c7)',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',
         }} />
-        <span style={{ color: '#475569' }}>Cargando sesión y verificando permisos...</span>
+        <span style={{ color: 'var(--text-muted, #475569)' }}>Cargando sesión y verificando permisos...</span>
         <style>{`
           @keyframes spin {
             to { transform: rotate(360deg); }

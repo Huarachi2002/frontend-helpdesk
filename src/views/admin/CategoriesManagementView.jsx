@@ -23,6 +23,7 @@ import { confirmDialog } from 'primereact/confirmdialog'
 import { useCategoriesStore } from '../../stores/categoriesStore.js'
 import { useUsersStore } from '../../stores/usersStore.js'
 import { useToast } from '../../context/ToastContext.jsx'
+import { categorySchema, validateSchema, extractApiValidationErrors } from '../../schemas/index.js'
 import './CategoriesManagementView.css'
 
 const defaultForm = {
@@ -54,6 +55,7 @@ export default function CategoriesManagementView() {
   const [isEditing, setIsEditing] = useState(false)
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
   const [formData, setFormData] = useState({ ...defaultForm })
 
   const loadData = useCallback(() => {
@@ -94,6 +96,7 @@ export default function CategoriesManagementView() {
     setIsEditing(false)
     setFormData({ ...defaultForm })
     setFormError('')
+    setFieldErrors({})
     setModalVisible(true)
   }
 
@@ -106,21 +109,31 @@ export default function CategoriesManagementView() {
       activo: Boolean(cat.activo),
     })
     setFormError('')
+    setFieldErrors({})
     setModalVisible(true)
+  }
+
+  const clearFieldError = (field) => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: '' }))
+    }
   }
 
   const handleFormSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.nombre.trim()) {
-      setFormError('El nombre de la categoría es obligatorio.')
+    const validation = validateSchema(categorySchema, formData)
+    if (!validation.success) {
+      setFieldErrors(validation.fieldErrors)
+      setFormError(validation.firstError)
       return
     }
 
     setFormSubmitting(true)
     setFormError('')
+    setFieldErrors({})
 
     try {
-      const res = await saveCategory(formData)
+      const res = await saveCategory(validation.data)
       showToast({
         severity: 'success',
         summary: isEditing ? 'Categoría Actualizada' : 'Categoría Creada',
@@ -133,9 +146,12 @@ export default function CategoriesManagementView() {
 
       setModalVisible(false)
     } catch (err) {
-      setFormError(
-        err.response?.data?.message || 'Error al procesar la solicitud de la categoría.'
+      const apiErr = extractApiValidationErrors(
+        err,
+        'Error al procesar la solicitud de la categoría.'
       )
+      setFieldErrors(apiErr.fieldErrors)
+      setFormError(apiErr.message)
     } finally {
       setFormSubmitting(false)
     }
@@ -527,7 +543,7 @@ export default function CategoriesManagementView() {
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit}>
+            <form onSubmit={handleFormSubmit} noValidate>
               <div className="modal-body">
                 {formError && (
                   <div className="form-alert-error">
@@ -543,15 +559,19 @@ export default function CategoriesManagementView() {
                   </label>
                   <input
                     type="text"
-                    className="input-field"
+                    className={`input-field ${fieldErrors.nombre ? 'input-invalid' : ''}`}
+                    aria-invalid={Boolean(fieldErrors.nombre)}
                     placeholder="Ej. Acceso y Login, Problemas Técnicos, Laboratorio Virtual..."
                     value={formData.nombre}
                     maxLength={100}
-                    required
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setFormData({ ...formData, nombre: e.target.value })
-                    }
+                      clearFieldError('nombre')
+                    }}
                   />
+                  {fieldErrors.nombre && (
+                    <span className="field-error-text">{fieldErrors.nombre}</span>
+                  )}
                   <span className="field-hint">
                     Nombre conciso y descriptivo de la temática de soporte (máx. 100 caracteres).
                   </span>
@@ -561,14 +581,20 @@ export default function CategoriesManagementView() {
                 <div className="form-group mt-3">
                   <label className="form-label">Descripción del Alcance Temático</label>
                   <textarea
-                    className="textarea-field"
+                    className={`textarea-field ${fieldErrors.descripcion ? 'input-invalid' : ''}`}
+                    aria-invalid={Boolean(fieldErrors.descripcion)}
                     rows={4}
+                    maxLength={2000}
                     placeholder="Describe los tipos de problemas, errores frecuentes y requerimientos que abarca esta categoría..."
                     value={formData.descripcion}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setFormData({ ...formData, descripcion: e.target.value })
-                    }
+                      clearFieldError('descripcion')
+                    }}
                   />
+                  {fieldErrors.descripcion && (
+                    <span className="field-error-text">{fieldErrors.descripcion}</span>
+                  )}
                   <span className="field-hint">
                     Esta explicación sirve de guía para los técnicos y como base de conocimiento para el clasificador inteligente.
                   </span>

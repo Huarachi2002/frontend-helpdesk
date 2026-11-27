@@ -12,6 +12,8 @@ import {
   IconChevronRight,
   IconInfoCircle,
   IconMessageReply,
+  IconArrowsVertical,
+  IconArrowBackUp,
 } from '@tabler/icons-react'
 import { useNotificationsStore } from '../stores/notificationsStore.js'
 import './NotificationBell.css'
@@ -109,6 +111,10 @@ export default function NotificationBell() {
         return <IconInfoCircle size={16} className="notif-icon-wait" />
       case 'RESPUESTA_TICKET':
         return <IconMessageReply size={16} className="notif-icon-ticket" />
+      case 'TICKET_RELEVADO':
+        return <IconArrowsVertical size={16} className="notif-icon-reminder" />
+      case 'TICKET_DEVUELTO':
+        return <IconArrowBackUp size={16} className="notif-icon-reassign" />
       default:
         return <IconTicket size={16} className="notif-icon-ticket" />
     }

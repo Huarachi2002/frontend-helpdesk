@@ -42,6 +42,7 @@ import Sparkline from '../../components/ui/Sparkline.jsx'
 import BulletChart from '../../components/ui/BulletChart.jsx'
 import DetailDrawer from '../../components/ui/DetailDrawer.jsx'
 import MetricsReportPanel, { formatHours } from './MetricsReportPanel.jsx'
+import { exportDateRangeSchema, validateSchema } from '../../schemas/index.js'
 import '../../components/ui/uxWidgets.css'
 import './ReportView.css'
 
@@ -80,6 +81,7 @@ export default function ReportView() {
   const [exportDrawerOpen, setExportDrawerOpen] = useState(false)
   const [exportFrom, setExportFrom] = useState('')
   const [exportTo, setExportTo] = useState('')
+  const [exportFieldErrors, setExportFieldErrors] = useState({})
   const [exportingFormat, setExportingFormat] = useState(null)
 
   useEffect(() => {
@@ -261,11 +263,27 @@ export default function ReportView() {
   }
 
   const doExport = async (format) => {
+    const validation = validateSchema(exportDateRangeSchema, {
+      date_from: exportFrom,
+      date_to: exportTo,
+    })
+    if (!validation.success) {
+      setExportFieldErrors(validation.fieldErrors)
+      showToast({
+        severity: 'warn',
+        summary: 'Rango de Fechas Inválido',
+        detail: validation.firstError,
+        life: 3500,
+      })
+      return
+    }
+
+    setExportFieldErrors({})
     setExportingFormat(format)
     try {
       const params = {}
-      if (exportFrom) params.date_from = exportFrom
-      if (exportTo) params.date_to = exportTo
+      if (validation.data.date_from) params.date_from = validation.data.date_from
+      if (validation.data.date_to) params.date_to = validation.data.date_to
 
       const response = await exportReport(format, params)
 
@@ -650,11 +668,20 @@ export default function ReportView() {
               <IconCalendar size={16} className="calendar-icon" />
               <input
                 type="date"
-                className="date-input w-full"
+                className={`date-input w-full ${exportFieldErrors.date_from ? 'input-invalid' : ''}`}
+                aria-invalid={Boolean(exportFieldErrors.date_from)}
                 value={exportFrom}
-                onChange={(e) => setExportFrom(e.target.value)}
+                onChange={(e) => {
+                  setExportFrom(e.target.value)
+                  if (exportFieldErrors.date_from || exportFieldErrors.date_to) {
+                    setExportFieldErrors({})
+                  }
+                }}
               />
             </div>
+            {exportFieldErrors.date_from && (
+              <span className="field-error-text">{exportFieldErrors.date_from}</span>
+            )}
           </div>
 
           <div className="date-field-col">
@@ -663,11 +690,20 @@ export default function ReportView() {
               <IconCalendar size={16} className="calendar-icon" />
               <input
                 type="date"
-                className="date-input w-full"
+                className={`date-input w-full ${exportFieldErrors.date_to ? 'input-invalid' : ''}`}
+                aria-invalid={Boolean(exportFieldErrors.date_to)}
                 value={exportTo}
-                onChange={(e) => setExportTo(e.target.value)}
+                onChange={(e) => {
+                  setExportTo(e.target.value)
+                  if (exportFieldErrors.date_from || exportFieldErrors.date_to) {
+                    setExportFieldErrors({})
+                  }
+                }}
               />
             </div>
+            {exportFieldErrors.date_to && (
+              <span className="field-error-text">{exportFieldErrors.date_to}</span>
+            )}
           </div>
 
           <div className="ux-drawer-section">

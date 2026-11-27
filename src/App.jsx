@@ -18,6 +18,7 @@ import CategoriesManagementView from './views/admin/CategoriesManagementView.jsx
 import PrioritiesManagementView from './views/admin/PrioritiesManagementView.jsx'
 import SettingsManagementView from './views/admin/SettingsManagementView.jsx'
 import AuditLogView from './views/admin/AuditLogView.jsx'
+import OrgStructureView from './views/admin/OrgStructureView.jsx'
 
 export default function App() {
   return (
@@ -100,6 +101,16 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
                 <UsersManagementView />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Estructura Organizacional (organigrama y cargos): Exclusivo Administrador */}
+          <Route
+            path="org-structure"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                <OrgStructureView />
               </ProtectedRoute>
             }
           />

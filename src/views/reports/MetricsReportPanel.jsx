@@ -42,6 +42,7 @@ import { chartColors } from '../../styles/theme.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import BulletChart from '../../components/ui/BulletChart.jsx'
 import DetailDrawer from '../../components/ui/DetailDrawer.jsx'
+import { metricsReportFilterSchema, validateSchema } from '../../schemas/index.js'
 
 ChartJS.register(
   CategoryScale,
@@ -159,9 +160,19 @@ export default function MetricsReportPanel({
   const [selectedRow, setSelectedRow] = useState(null)
   const requestId = useRef(0)
 
-  const rangeError = dateFrom && dateTo && dateFrom > dateTo
-    ? 'La fecha "Hasta" no puede ser anterior a la fecha "Desde".'
-    : null
+  const filterValidation = useMemo(
+    () =>
+      validateSchema(metricsReportFilterSchema, {
+        date_from: dateFrom,
+        date_to: dateTo,
+        level,
+        technician_id: technicianId,
+        category_id: categoryId,
+      }),
+    [dateFrom, dateTo, level, technicianId, categoryId]
+  )
+
+  const rangeError = filterValidation.success ? null : filterValidation.firstError
 
   const params = useMemo(() => {
     const p = { date_from: dateFrom, date_to: dateTo, level }

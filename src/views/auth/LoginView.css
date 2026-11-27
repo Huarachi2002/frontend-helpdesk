@@ -1,20 +1,41 @@
-.login-wrapper {
+.login-page-shell {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--login-bg);
+}
+
+.login-topbar-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px 0;
+  gap: 12px;
+}
+
+.login-topbar-brand {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.2px;
+}
+
+.login-wrapper {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 20%, var(--color-slate-800), var(--color-slate-900) 70%);
   padding: 20px;
 }
 
 .login-wrapper .login-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 430px;
   background: var(--surface-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 36px 32px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-default);
 }
 
 .login-wrapper .login-brand {
@@ -36,7 +57,7 @@
 }
 
 .login-wrapper .brand-title {
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: -0.4px;
@@ -44,7 +65,7 @@
 }
 
 .login-wrapper .brand-desc {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-muted);
   margin-top: 6px;
   line-height: 1.4;
@@ -65,7 +86,7 @@
   color: var(--color-danger-700);
   padding: 10px 14px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .login-wrapper .error-alert-icon {
@@ -79,7 +100,7 @@
 }
 
 .login-wrapper .input-label {
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 600;
   color: var(--text-body);
 }
@@ -103,7 +124,7 @@
   background: var(--surface-input);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--text-main);
   outline: none;
   transition: all 0.2s ease;
@@ -129,7 +150,7 @@
 }
 
 .login-wrapper .password-toggle-btn:hover {
-  color: var(--color-slate-600);
+  color: var(--text-body);
 }
 
 .login-wrapper .login-submit-btn {
@@ -142,7 +163,7 @@
 .login-wrapper .login-footer {
   margin-top: 24px;
   text-align: center;
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   color: var(--text-subtle);
   border-top: 1px solid var(--border-subtle);
   padding-top: 14px;

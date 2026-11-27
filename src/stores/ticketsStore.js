@@ -8,7 +8,20 @@ import {
   reassignTicket,
   approveReassignment as apiApproveReassignment,
   rejectReassignment as apiRejectReassignment,
+  getEscalationOptions,
+  escalateTicket,
+  returnTicket,
 } from '../api/tickets.js'
+
+// Normaliza errores de la API (validación 422 o reglas de negocio) en un Error con mensaje legible
+function toEnrichedError(e, fallback) {
+  const responseData = e.response?.data ?? {}
+  const validation = responseData.errors ? Object.values(responseData.errors).flat()[0] : null
+  const enriched = new Error(validation || responseData.message || fallback)
+  enriched.errorCode = responseData.error ?? null
+  enriched.httpStatus = e.response?.status ?? 500
+  return enriched
+}
 
 export const useTicketsStore = create((set, get) => ({
   tickets: [],
@@ -146,6 +159,39 @@ export const useTicketsStore = create((set, get) => ({
       const enriched = new Error(message)
       enriched.errorCode = e.response?.data?.error
       throw enriched
+    }
+  },
+
+  // --- Relevamiento ---
+
+  fetchEscalationOptions: async (ticketId) => {
+    try {
+      const { data } = await getEscalationOptions(ticketId)
+      return data.data
+    } catch (e) {
+      throw toEnrichedError(e, 'No se pudieron cargar las opciones de relevamiento')
+    }
+  },
+
+  escalate: async (ticketId, destinoUsuarioId, motivo) => {
+    try {
+      const { data } = await escalateTicket(ticketId, { destino_usuario_id: destinoUsuarioId, motivo })
+      if (data.data) set({ ticket: data.data })
+      return data
+    } catch (e) {
+      throw toEnrichedError(e, 'Error al relevar el ticket')
+    }
+  },
+
+  returnToPrevious: async (ticketId, instrucciones, destinoUsuarioId = null) => {
+    try {
+      const payload = { instrucciones }
+      if (destinoUsuarioId) payload.destino_usuario_id = destinoUsuarioId
+      const { data } = await returnTicket(ticketId, payload)
+      if (data.data) set({ ticket: data.data })
+      return data
+    } catch (e) {
+      throw toEnrichedError(e, 'Error al devolver el ticket')
     }
   },
 }))

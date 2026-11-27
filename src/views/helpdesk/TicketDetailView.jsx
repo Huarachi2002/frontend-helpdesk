@@ -35,6 +35,19 @@ import { getEligibleAgents } from '../../api/tickets.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import TicketWaitingHours from '../../components/TicketWaitingHours.jsx'
 import TicketConversation from '../../components/TicketConversation.jsx'
+import {
+  EscalationButton,
+  EscalationBanner,
+  EscalationModals,
+  CargoActualLine,
+  isEscalationHistory,
+} from '../../components/TicketEscalation.jsx'
+import {
+  createReassignTicketSchema,
+  rejectReassignmentSchema,
+  ticketStatusUpdateSchema,
+  validateSchema,
+} from '../../schemas/index.js'
 import './TicketDetailView.css'
 
 export default function TicketDetailView() {
@@ -56,6 +69,7 @@ export default function TicketDetailView() {
 
   const [newStatus, setNewStatus] = useState('')
   const [statusComment, setStatusComment] = useState('')
+  const [statusFieldErrors, setStatusFieldErrors] = useState({})
   const [actionLoading, setActionLoading] = useState(false)
 
   // Estados para Modal de Reasignación Especializada
@@ -66,6 +80,10 @@ export default function TicketDetailView() {
   const [reassignComment, setReassignComment] = useState('')
   const [reassigning, setReassigning] = useState(false)
   const [reassignError, setReassignError] = useState('')
+  const [reassignFieldErrors, setReassignFieldErrors] = useState({})
+
+  // Relevamiento vertical: 'escalate' | 'return' | null
+  const [escalationMode, setEscalationMode] = useState(null)
 
   // Estados para Aprobación / Rechazo de Reasignación (Admin)
   const [approving, setApproving] = useState(false)
@@ -73,9 +91,22 @@ export default function TicketDetailView() {
   const [rejectReason, setRejectReason] = useState('')
   const [rejecting, setRejecting] = useState(false)
   const [rejectError, setRejectError] = useState('')
+  const [rejectFieldErrors, setRejectFieldErrors] = useState({})
 
   // Transiciones permitidas desde el estado actual (vienen del TicketResource via State Pattern)
   const allowedTransitions = useMemo(() => ticket?.allowed_transitions ?? [], [ticket])
+
+  // Indica si el ticket está en estado Resuelto o Cerrado (no permite reasignación)
+  const isTicketClosedOrResolved = useMemo(() => {
+    if (!ticket) return false
+    const state = String(ticket.estado || ticket.status || '').trim().toLowerCase()
+    return (
+      state === 'resuelto' ||
+      state === 'resolved' ||
+      state === 'cerrado' ||
+      state === 'closed'
+    )
+  }, [ticket])
 
   useEffect(() => {
     if (id) {
@@ -207,16 +238,25 @@ export default function TicketDetailView() {
   }
 
   const handleStatusChange = async () => {
-    if (!newStatus) return
+    const validation = validateSchema(ticketStatusUpdateSchema, {
+      status: newStatus,
+      comments: statusComment,
+    })
+    if (!validation.success) {
+      setStatusFieldErrors(validation.fieldErrors)
+      return
+    }
+
+    setStatusFieldErrors({})
     setActionLoading(true)
 
     try {
-      await changeStatus(id, newStatus, statusComment)
+      await changeStatus(id, validation.data.status, validation.data.comments)
       setStatusComment('')
       showToast({
         severity: 'success',
         summary: 'Estado Actualizado',
-        detail: `El ticket ahora está en estado "${statusLabel(newStatus)}"`,
+        detail: `El ticket ahora está en estado "${statusLabel(validation.data.status)}"`,
         life: 3500,
       })
     } catch (e) {
@@ -283,8 +323,18 @@ export default function TicketDetailView() {
   }
 
   const openReassignModal = async () => {
+    if (isTicketClosedOrResolved) {
+      showToast({
+        severity: 'warn',
+        summary: 'Reasignación no permitida',
+        detail: 'No se puede reasignar un ticket en estado Resuelto o Cerrado.',
+        life: 4000,
+      })
+      return
+    }
     setIsReassignModalOpen(true)
     setReassignError('')
+    setReassignFieldErrors({})
     setReassignComment('')
     setSelectedAgentId(null)
     setLoadingEligible(true)
@@ -310,19 +360,24 @@ export default function TicketDetailView() {
   }
 
   const handleConfirmReassign = async () => {
-    if (!selectedAgentId) return
-
-    if (!userIsAdmin && !reassignComment.trim()) {
-      setReassignError('Debes ingresar una justificación o motivo para la solicitud de reasignación.')
+    const schema = createReassignTicketSchema(userIsAdmin)
+    const validation = validateSchema(schema, {
+      assigned_to: selectedAgentId,
+      comments: reassignComment,
+    })
+    if (!validation.success) {
+      setReassignFieldErrors(validation.fieldErrors)
+      setReassignError(validation.firstError)
       return
     }
 
     setReassigning(true)
     setReassignError('')
+    setReassignFieldErrors({})
 
     try {
-      await reassign(id, selectedAgentId, reassignComment)
-      const chosen = eligibleAgents.find((a) => a.id === selectedAgentId)
+      await reassign(id, validation.data.assigned_to, validation.data.comments)
+      const chosen = eligibleAgents.find((a) => a.id === validation.data.assigned_to)
       const agentName = chosen ? chosen.name : 'técnico seleccionado'
 
       if (userIsAdmin) {
@@ -336,7 +391,7 @@ export default function TicketDetailView() {
         showToast({
           severity: 'info',
           summary: 'Solicitud Enviada',
-          detail: `Se envió la solicitud de reasignación a "${agentName}" para aprobación de la Dirección.`,
+          detail: `Se envió la solicitud de reasignación a "${agentName}" para aprobación de tu superior jerárquico.`,
           life: 5000,
         })
       }
@@ -376,20 +431,24 @@ export default function TicketDetailView() {
   const handleOpenRejectModal = () => {
     setRejectReason('')
     setRejectError('')
+    setRejectFieldErrors({})
     setIsRejectModalOpen(true)
   }
 
   const handleConfirmReject = async () => {
     if (!ticket?.pending_reassignment) return
-    if (!rejectReason.trim()) {
-      setRejectError('Debes ingresar un motivo para el rechazo de la solicitud.')
+    const validation = validateSchema(rejectReassignmentSchema, { reason: rejectReason })
+    if (!validation.success) {
+      setRejectFieldErrors(validation.fieldErrors)
+      setRejectError(validation.firstError)
       return
     }
 
     setRejecting(true)
     setRejectError('')
+    setRejectFieldErrors({})
     try {
-      await rejectReassignment(ticket.id, ticket.pending_reassignment.id, rejectReason)
+      await rejectReassignment(ticket.id, ticket.pending_reassignment.id, validation.data.reason)
       showToast({
         severity: 'warn',
         summary: 'Solicitud Rechazada',
@@ -633,7 +692,7 @@ export default function TicketDetailView() {
                           <div
                             className={`timeline-comment-box box-${
                               h.changer_role || 'system'
-                            }`}
+                            } ${isEscalationHistory(h.comments) ? 'is-escalation' : ''}`}
                           >
                             <IconMessageDots size={15} className="comment-icon" />
                             <span className="comment-text">{h.comments}</span>
@@ -716,11 +775,24 @@ export default function TicketDetailView() {
                     <textarea
                       id="status-comment"
                       value={statusComment}
-                      className="textarea-field"
+                      className={`textarea-field ${statusFieldErrors.comments ? 'input-invalid' : ''}`}
+                      aria-invalid={Boolean(statusFieldErrors.comments)}
+                      maxLength={1000}
                       rows={3}
                       placeholder="Ej. Se reestableció el acceso al aula virtual..."
-                      onChange={(e) => setStatusComment(e.target.value)}
+                      onChange={(e) => {
+                        setStatusComment(e.target.value)
+                        if (statusFieldErrors.comments) {
+                          setStatusFieldErrors((prev) => ({ ...prev, comments: '' }))
+                        }
+                      }}
                     />
+                    {statusFieldErrors.comments && (
+                      <span className="field-error-text">{statusFieldErrors.comments}</span>
+                    )}
+                    {statusFieldErrors.status && (
+                      <span className="field-error-text">{statusFieldErrors.status}</span>
+                    )}
                   </div>
 
                   <Button
@@ -738,16 +810,16 @@ export default function TicketDetailView() {
 
             {/* Banner de Solicitud de Reasignación Pendiente */}
             {ticket.pending_reassignment && (
-              <div className={`pending-reassign-banner ${userIsAdmin ? 'is-admin' : 'is-support'}`}>
+              <div className={`pending-reassign-banner ${ticket.pending_reassignment.can_resolve ? 'is-admin' : 'is-support'}`}>
                 <div className="banner-top-row">
                   <div className="banner-title-wrap">
-                    {userIsAdmin ? (
+                    {ticket.pending_reassignment.can_resolve ? (
                       <IconAlertTriangle size={18} className="banner-icon-warning" />
                     ) : (
                       <IconClock size={18} className="banner-icon-info" />
                     )}
                     <span className="banner-title-text">
-                      {userIsAdmin
+                      {ticket.pending_reassignment.can_resolve
                         ? 'Solicitud de Reasignación Pendiente'
                         : 'Solicitud de Reasignación en Revisión'}
                     </span>
@@ -772,16 +844,30 @@ export default function TicketDetailView() {
                     <span className="b-label">Fecha de solicitud:</span>
                     <span className="b-val">{formatDate(ticket.pending_reassignment.fecha_solicitud)}</span>
                   </div>
+                  {ticket.pending_reassignment.aprobadores?.length > 0 && (
+                    <div className="banner-detail-item full-width">
+                      <span className="b-label">Puede aprobar (superior jerárquico):</span>
+                      <span className="b-val">
+                        {ticket.pending_reassignment.aprobadores
+                          .map((a) => (a.cargo ? `${a.name} (${a.cargo})` : a.name))
+                          .join(' · ')}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {userIsAdmin ? (
+                {ticket.pending_reassignment.can_resolve ? (
                   <div className="banner-admin-actions">
                     <button
                       type="button"
                       className="btn-approve-banner"
-                      disabled={approving || rejecting}
+                      disabled={approving || rejecting || isTicketClosedOrResolved}
                       onClick={handleApproveReassignment}
-                      title="Autorizar la transferencia al técnico propuesto"
+                      title={
+                        isTicketClosedOrResolved
+                          ? 'No se puede aprobar la reasignación en un ticket Resuelto o Cerrado'
+                          : 'Autorizar la transferencia al técnico propuesto'
+                      }
                     >
                       <IconCheck size={16} />
                       <span>{approving ? 'Aprobando...' : 'Aprobar Reasignación'}</span>
@@ -800,11 +886,18 @@ export default function TicketDetailView() {
                 ) : (
                   <div className="banner-support-footer">
                     <IconInfoCircle size={14} />
-                    <span>Tu solicitud ha sido enviada al Director para su autorización.</span>
+                    <span>
+                      {userIsAdmin
+                        ? 'Esta solicitud la resuelve el superior jerárquico del técnico solicitante.'
+                        : 'Tu solicitud ha sido enviada a tu superior jerárquico para su autorización.'}
+                    </span>
                   </div>
                 )}
               </div>
             )}
+
+            {/* Banner del último Relevamiento / Devolución */}
+            <EscalationBanner ticket={ticket} onReturn={() => setEscalationMode('return')} />
 
             {/* Agente Asignado */}
             <div className="surface-card">
@@ -813,12 +906,18 @@ export default function TicketDetailView() {
                   <IconUser size={17} className="text-blue" />
                   <h3 className="section-heading">Técnico Asignado</h3>
                 </div>
+                <div className="assigned-header-actions">
                 {userIsAdmin ? (
                   <button
                     type="button"
-                    className="btn-reassign-badge"
+                    className={`btn-reassign-badge ${isTicketClosedOrResolved ? 'is-disabled' : ''}`}
                     onClick={openReassignModal}
-                    title="Reasignar directamente a otro técnico especializado"
+                    disabled={isTicketClosedOrResolved}
+                    title={
+                      isTicketClosedOrResolved
+                        ? 'No se puede reasignar un ticket en estado Resuelto o Cerrado'
+                        : 'Reasignar directamente a otro técnico especializado'
+                    }
                   >
                     <IconArrowsExchange size={14} />
                     <span>Reasignar Directamente</span>
@@ -826,19 +925,25 @@ export default function TicketDetailView() {
                 ) : (
                   <button
                     type="button"
-                    className={`btn-reassign-badge ${ticket.pending_reassignment ? 'is-disabled' : ''}`}
+                    className={`btn-reassign-badge ${
+                      ticket.pending_reassignment || isTicketClosedOrResolved ? 'is-disabled' : ''
+                    }`}
                     onClick={openReassignModal}
-                    disabled={Boolean(ticket.pending_reassignment)}
+                    disabled={Boolean(ticket.pending_reassignment) || isTicketClosedOrResolved}
                     title={
-                      ticket.pending_reassignment
+                      isTicketClosedOrResolved
+                        ? 'No se puede solicitar reasignación en un ticket Resuelto o Cerrado'
+                        : ticket.pending_reassignment
                         ? 'Ya existe una solicitud de reasignación pendiente para este ticket'
-                        : 'Solicitar reasignación a la Dirección'
+                        : 'Solicitar reasignación a tu superior jerárquico'
                     }
                   >
                     <IconArrowsExchange size={14} />
                     <span>{ticket.pending_reassignment ? 'Solicitud Pendiente' : 'Solicitar Reasignación'}</span>
                   </button>
                 )}
+                <EscalationButton ticket={ticket} onClick={() => setEscalationMode('escalate')} />
+                </div>
               </div>
 
               {ticket.tecnico_asignado || ticket.assigned_to ? (
@@ -869,6 +974,7 @@ export default function TicketDetailView() {
                       <div className="profile-badge-sub">
                         {roleLabel(ticket.tecnico_asignado?.rol || 'TECNICO')}
                       </div>
+                      <CargoActualLine ticket={ticket} />
                     </div>
                   </div>
 
@@ -1084,7 +1190,11 @@ export default function TicketDetailView() {
               {/* Lista de Técnicos Elegibles */}
               <div className="eligible-agents-section">
                 <div className="section-label-row">
-                  <span className="section-subheading">Técnicos calificados disponibles:</span>
+                  <span className="section-subheading">
+                    {ticket.cargo_actual?.nivel
+                      ? `Técnicos disponibles en el nivel ${ticket.cargo_actual.nivel}:`
+                      : 'Técnicos calificados disponibles:'}
+                  </span>
                   {!loadingEligible && (
                     <span className="eligible-count-badge">
                       {eligibleAgents.length} disponibles
@@ -1108,8 +1218,10 @@ export default function TicketDetailView() {
                     <div className="empty-eligible-text">
                       <b>No hay técnicos disponibles para este perfil</b>
                       <p>
-                        Ningún agente activo tiene designada simultáneamente la categoría "
-                        {ticket.category?.name || 'N/A'}" y la prioridad "{priorityLabel(ticket.priority)}".
+                        {ticket.cargo_actual?.nivel
+                          ? `No hay otro agente activo en el nivel ${ticket.cargo_actual.nivel} que atienda esta categoría y prioridad. `
+                          : `Ningún agente activo tiene designada la categoría "${ticket.category?.name || 'N/A'}" y la prioridad "${priorityLabel(ticket.priority)}". `}
+                        La reasignación solo mueve el ticket dentro de su nivel; para subirlo o bajarlo usa "Relevar Ticket".
                       </p>
                     </div>
                   </div>
@@ -1245,15 +1357,25 @@ export default function TicketDetailView() {
                   id="reassign-comment"
                   value={reassignComment}
                   rows={2}
-                  className="textarea-field"
+                  maxLength={1000}
+                  className={`textarea-field ${reassignFieldErrors.comments ? 'input-invalid' : ''}`}
+                  aria-invalid={Boolean(reassignFieldErrors.comments)}
                   placeholder={
                     userIsAdmin
                       ? 'Ej. Reasignación directa por especialidad técnica en campus...'
                       : 'Ej. Se solicita derivar por alta carga o especialidad requerida en el campus virtual...'
                   }
-                  onChange={(e) => setReassignComment(e.target.value)}
-                  required={!userIsAdmin}
+                  onChange={(e) => {
+                    setReassignComment(e.target.value)
+                    if (reassignFieldErrors.comments) {
+                      setReassignFieldErrors((prev) => ({ ...prev, comments: '' }))
+                    }
+                    if (reassignError) setReassignError('')
+                  }}
                 />
+                {reassignFieldErrors.comments && (
+                  <span className="field-error-text">{reassignFieldErrors.comments}</span>
+                )}
               </div>
 
               {reassignError && eligibleAgents.length > 0 && (
@@ -1279,8 +1401,7 @@ export default function TicketDetailView() {
                 disabled={
                   !selectedAgentId ||
                   reassigning ||
-                  eligibleAgents.length === 0 ||
-                  (!userIsAdmin && !reassignComment.trim())
+                  eligibleAgents.length === 0
                 }
                 onClick={handleConfirmReassign}
               >
@@ -1288,13 +1409,16 @@ export default function TicketDetailView() {
                 <span>
                   {reassigning
                     ? (userIsAdmin ? 'Reasignando...' : 'Enviando solicitud...')
-                    : (userIsAdmin ? 'Confirmar Reasignación Directa' : 'Enviar Solicitud a Dirección')}
+                    : (userIsAdmin ? 'Confirmar Reasignación Directa' : 'Enviar Solicitud al Superior')}
                 </span>
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Modales de Relevamiento y Devolución */}
+      <EscalationModals ticket={ticket} mode={escalationMode} onClose={() => setEscalationMode(null)} />
 
       {/* Modal para Rechazar Solicitud de Reasignación (Admin) */}
       {isRejectModalOpen && (
@@ -1307,7 +1431,7 @@ export default function TicketDetailView() {
           <div className="reassign-modal-card" style={{ maxWidth: '480px' }}>
             <div className="modal-header">
               <div className="modal-title-group">
-                <h2 className="modal-title" style={{ color: '#e11d48' }}>Rechazar Solicitud de Reasignación</h2>
+                <h2 className="modal-title" style={{ color: 'var(--color-danger-600)' }}>Rechazar Solicitud de Reasignación</h2>
                 <span className="modal-subtitle">
                   Ticket {ticket.codigo || `#${ticket.id}`}
                 </span>
@@ -1322,7 +1446,7 @@ export default function TicketDetailView() {
             </div>
 
             <div className="reassign-modal-body">
-              <p style={{ fontSize: '13.5px', color: '#475569', marginBottom: '14px', lineHeight: '1.5' }}>
+              <p style={{ fontSize: '0.84375rem', color: 'var(--text-body)', marginBottom: '14px', lineHeight: '1.5' }}>
                 Indica el motivo por el cual estás rechazando la reasignación solicitada por{' '}
                 <b>{ticket.pending_reassignment?.solicitante?.name || 'el técnico'}</b> hacia{' '}
                 <b>{ticket.pending_reassignment?.tecnico_propuesto?.name || 'otro técnico'}</b>.
@@ -1336,10 +1460,21 @@ export default function TicketDetailView() {
                   id="reject-reason"
                   value={rejectReason}
                   rows={3}
-                  className="textarea-field"
+                  maxLength={1000}
+                  className={`textarea-field ${rejectFieldErrors.reason ? 'input-invalid' : ''}`}
+                  aria-invalid={Boolean(rejectFieldErrors.reason)}
                   placeholder="Ej. El técnico asignado cuenta con la disponibilidad y especialidad requerida..."
-                  onChange={(e) => setRejectReason(e.target.value)}
+                  onChange={(e) => {
+                    setRejectReason(e.target.value)
+                    if (rejectFieldErrors.reason) {
+                      setRejectFieldErrors((prev) => ({ ...prev, reason: '' }))
+                    }
+                    if (rejectError) setRejectError('')
+                  }}
                 />
+                {rejectFieldErrors.reason && (
+                  <span className="field-error-text">{rejectFieldErrors.reason}</span>
+                )}
               </div>
 
               {rejectError && (
@@ -1362,7 +1497,7 @@ export default function TicketDetailView() {
               <button
                 type="button"
                 className="btn-danger-action"
-                disabled={rejecting || !rejectReason.trim()}
+                disabled={rejecting}
                 onClick={handleConfirmReject}
               >
                 <IconX size={16} />

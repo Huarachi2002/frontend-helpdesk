@@ -8,6 +8,7 @@ import {
   IconFlame,
   IconSettings,
   IconShieldCheck,
+  IconSitemap,
 } from '@tabler/icons-react'
 import { ROLES, hasRole } from '../utils/permissions.js'
 
@@ -100,6 +101,15 @@ export const NAVIGATION_SCHEMA = [
         badge: null,
       },
       {
+        id: 'nav-org-structure',
+        title: 'Estructura Organizacional',
+        to: '/org-structure',
+        icon: IconSitemap,
+        roles: [ROLES.ADMIN],
+        description: 'Organigrama, cargos y niveles para el relevamiento de tickets',
+        badge: null,
+      },
+      {
         id: 'nav-categories',
         title: 'Categorías',
         to: '/categories',
@@ -163,6 +173,13 @@ export function getNavigationForUser(user) {
  * @returns {{ title: string, category: string, subtitle?: string }}
  */
 export function getRouteContext(pathname = '') {
+  if (pathname.startsWith('/login')) {
+    return {
+      title: 'Iniciar Sesión',
+      category: 'Acceso',
+      subtitle: 'Autenticación institucional al sistema Helpdesk UAGRM',
+    }
+  }
   if (pathname.startsWith('/dashboard')) {
     return {
       title: 'Dashboard General',
@@ -203,6 +220,13 @@ export function getRouteContext(pathname = '') {
       title: 'Bitácora de Auditoría',
       category: 'Administración',
       subtitle: 'Registro persistente de accesos, inicios de sesión e intentos fallidos',
+    }
+  }
+  if (pathname.startsWith('/org-structure')) {
+    return {
+      title: 'Estructura Organizacional',
+      category: 'Administración',
+      subtitle: 'Organigrama, cargos y niveles para el relevamiento de tickets',
     }
   }
   if (pathname.startsWith('/users')) {
